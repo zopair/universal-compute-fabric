@@ -9,10 +9,18 @@ def _eligibility_reasons(node: ComputeNode, job: WorkloadRequest) -> list[str]:
         failures.append("tier_not_allowed")
     if not job.required_capabilities.issubset(node.capabilities):
         failures.append("missing_capability")
-    if node.cpu_millicores < job.cpu_millicores:
-        failures.append("insufficient_cpu")
-    if node.memory_mb < job.memory_mb:
-        failures.append("insufficient_memory")
+    available_cpu = (
+        node.available_cpu_millicores
+        if node.available_cpu_millicores is not None
+        else node.cpu_millicores
+    )
+    available_memory = (
+        node.available_memory_mb if node.available_memory_mb is not None else node.memory_mb
+    )
+    if available_cpu < job.cpu_millicores:
+        failures.append("insufficient_available_cpu")
+    if available_memory < job.memory_mb:
+        failures.append("insufficient_available_memory")
     if node.gpu_units < job.gpu_units:
         failures.append("insufficient_gpu")
     if node.estimated_latency_ms > job.max_latency_ms:
