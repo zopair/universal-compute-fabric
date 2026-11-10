@@ -31,7 +31,7 @@ A workload declares required capabilities, CPU/memory/GPU, latency budget, local
 Control plane: HTTPS/gRPC for identity, inventory, scheduling and lifecycle. Data plane: workload-specific transport; WebRTC may suit interactive audio/video, while QUIC may suit multiplexed streams. Benchmark before selecting.
 
 ## Isolation
-The M2 task contract requires OCI image references pinned to SHA-256 digests and passes commands as argument arrays, not shell strings. The optional Linux worker executor uses Docker with network disabled, read-only root filesystem, dropped capabilities, non-root identity, CPU/memory/PID limits, bounded time/output, no host mounts, and an exact digest allowlist. Execution is disabled by default. Containers are a POC isolation boundary, not a substitute for microVMs against hostile multi-tenant workloads.
+The M2 task contract requires OCI image references pinned to SHA-256 digests and passes commands as argument arrays, not shell strings. The optional Linux worker executor uses Docker with network disabled, read-only root filesystem, dropped capabilities, non-root identity, CPU/memory/PID limits, bounded time/output, no host mounts, and an exact digest allowlist. Execution is disabled by default. CI builds and runs a minimal digest-pinned image through a local registry to verify the Docker adapter's real execution path. This smoke test does not establish crash recovery or hostile multi-tenant isolation. Containers are a POC isolation boundary, not a substitute for microVMs against hostile multi-tenant workloads.
 
 ## Session continuity
 Persist application state explicitly and rehydrate it on compatible targets. Handoff is not arbitrary process migration between unlike operating systems.
