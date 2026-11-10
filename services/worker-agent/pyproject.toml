@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ucf-worker-agent"
+version = "0.1.0"
+description = "Minimal Linux resource heartbeat agent for UCF"
+requires-python = ">=3.11"
+dependencies = ["psutil>=6,<8"]
+
+[project.scripts]
+ucf-worker = "ucf_worker.agent:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ucf_worker*"]
