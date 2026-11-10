@@ -12,7 +12,9 @@ UCF is a control plane for selecting where explicit workloads run across device,
 6. Resource fabric: CPU, GPU, NPU, memory, storage and network inventory.
 7. Infrastructure: edge sites, private clusters and cloud regions.
 
-## Placement
+## Resource inventory and placement
+The persistent registry stores total node capacity separately from live available CPU and RAM. Worker heartbeats refresh availability snapshots; stale leases are excluded. These values are estimates, not reservations. Before concurrent workload execution is enabled, the executor must add atomic resource reservations and release/reconciliation on completion or failure.
+
 A workload declares required capabilities, CPU/memory/GPU, latency budget, locality, trust, energy/cost preference, runtime constraints and fallback behavior. The scheduler filters ineligible nodes before scoring candidates. Hard constraints are never traded for a better score. The initial score is a transparent heuristic, not ML.
 
 ## Execution tiers
