@@ -3,7 +3,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
 COPY services/control-plane/pyproject.toml ./pyproject.toml
 COPY services/control-plane/ucf ./ucf
-COPY services/control-plane/migrations ./migrations
+COPY services/control-plane/migrations ./services/control-plane/migrations
 COPY alembic.ini ./alembic.ini
 RUN pip install --no-cache-dir .
 EXPOSE 8000
