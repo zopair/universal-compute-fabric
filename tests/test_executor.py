@@ -14,7 +14,6 @@ def task(**overrides):
 
 def test_docker_command_enforces_isolation_and_resource_limits():
     command = build_docker_command(task(), "ucf-task-test")
-    joined = " ".join(command)
     assert "--network=none" in command
     assert "--read-only" in command
     assert "--cap-drop=ALL" in command
