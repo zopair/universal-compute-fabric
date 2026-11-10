@@ -4,13 +4,24 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ucf-control-plane"
-version = "0.1.0"
-description = "Hybrid edge-cloud workload placement control plane prototype"
+version = "0.2.0"
+description = "Hybrid edge-cloud workload placement control plane"
 requires-python = ">=3.11"
-dependencies = ["fastapi>=0.110,<1.0", "uvicorn[standard]>=0.27,<1.0", "pydantic>=2.6,<3.0"]
+dependencies = [
+  "fastapi>=0.115,<1.0",
+  "uvicorn[standard]>=0.30,<1.0",
+  "pydantic>=2.8,<3.0",
+  "SQLAlchemy>=2.0,<3.0",
+  "psycopg[binary]>=3.2,<4.0",
+  "alembic>=1.13,<2.0",
+  "opentelemetry-api>=1.27,<2.0",
+  "opentelemetry-sdk>=1.27,<2.0",
+  "opentelemetry-instrumentation-fastapi>=0.48b0",
+  "opentelemetry-exporter-otlp-proto-http>=1.27,<2.0",
+]
 
 [project.optional-dependencies]
-dev = ["pytest>=8,<9", "httpx>=0.27,<1", "ruff>=0.3,<1"]
+dev = ["pytest>=8,<9", "httpx>=0.27,<1", "ruff>=0.6,<1"]
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -19,6 +30,7 @@ include = ["ucf*"]
 [tool.pytest.ini_options]
 testpaths = ["../../tests"]
 pythonpath = ["."]
+addopts = "-ra"
 
 [tool.ruff]
 line-length = 100
