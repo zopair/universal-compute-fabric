@@ -29,6 +29,11 @@ def require_admin(x_ucf_admin_key: str | None = Header(default=None)) -> None:
                 detail="Administrative authentication is not configured",
             )
         return
+    if settings.production and len(configured) < 32:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Administrative credential must be at least 32 characters",
+        )
     if not x_ucf_admin_key or not hmac.compare_digest(x_ucf_admin_key, configured):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid admin credential")
 
