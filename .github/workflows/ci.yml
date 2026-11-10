@@ -46,5 +46,9 @@ jobs:
         env:
           DATABASE_URL: postgresql+psycopg://ucf:ucf-ci-password@localhost:5432/ucf
         run: alembic upgrade head
+      - name: PostgreSQL concurrent reservation test
+        env:
+          DATABASE_URL: postgresql+psycopg://ucf:ucf-ci-password@localhost:5432/ucf
+        run: pytest -q tests/test_postgres_concurrency.py
       - name: Test
         run: pytest -q
