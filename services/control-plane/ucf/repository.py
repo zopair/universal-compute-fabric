@@ -163,6 +163,11 @@ def rotate_node_token(db: Session, node_id: str) -> str | None:
         return None
     token = create_node_token()
     record.credential_hash = hash_token(token)
+    record.status = "pending"
+    record.last_seen_at = None
+    record.lease_expires_at = None
+    record.available_cpu_millicores = None
+    record.available_memory_mb = None
     record.updated_at = utcnow()
     add_audit(db, "node.credential_rotated", node_id)
     db.commit()
