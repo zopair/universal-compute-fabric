@@ -17,7 +17,7 @@ Administrative endpoints accept `X-UCF-Admin-Key`. Configure `UCF_ADMIN_API_KEY`
 
 ## Heartbeat and leases
 
-`POST /v1/nodes/{node_id}/heartbeat` requires `Authorization: Bearer <node_token>`. Optional resource fields refresh inventory. A successful heartbeat renews the node lease (default 45 seconds). The Linux worker agent in `services/worker-agent` reports CPU and RAM capacity.
+`POST /v1/nodes/{node_id}/heartbeat` requires `Authorization: Bearer <node_token>`. Optional resource fields refresh the live availability snapshot. `available_cpu_millicores` and `available_memory_mb` are kept separate from total `cpu_millicores` and `memory_mb`; the scheduler uses the live available values when present. A successful heartbeat renews the node lease (default 45 seconds). The Linux worker agent in `services/worker-agent` reports estimated available CPU and RAM.
 
 Nodes whose lease expires are marked stale and excluded from scheduling. Expiry is checked during inventory and scheduling requests; a dedicated background reaper can be added when worker volume requires it.
 
