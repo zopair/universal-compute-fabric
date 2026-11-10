@@ -144,8 +144,8 @@ def test_admin_rotation_invalidates_previous_node_token(client):
 
 def test_node_identifier_rejects_path_unsafe_characters(client):
     response = client.put(
-        "/v1/nodes/invalid%2Fnode",
-        json=node_payload("invalid/node"),
+        "/v1/nodes/bad@id",
+        json=node_payload("bad@id"),
         headers={"X-UCF-Admin-Key": "test-admin-key"},
     )
     assert response.status_code == 422
