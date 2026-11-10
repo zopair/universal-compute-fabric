@@ -25,17 +25,16 @@ def validate_endpoint(endpoint: str) -> str:
     return endpoint.rstrip("/")
 
 
-def collect_resources(gpu_units: int = 0) -> dict[str, object]:
+def collect_resources(gpu_units: int | None = None) -> dict[str, object]:
     cpu_count = psutil.cpu_count(logical=True) or 1
-    capabilities = ["cpu", "memory", "network"]
-    if gpu_units > 0:
-        capabilities.append("gpu")
-    return {
+    resources: dict[str, object] = {
         "cpu_millicores": cpu_count * 1000,
         "memory_mb": max(1, psutil.virtual_memory().total // (1024 * 1024)),
-        "gpu_units": gpu_units,
-        "capabilities": capabilities,
     }
+    # Preserve admin-declared capabilities unless GPU inventory is explicitly configured.
+    if gpu_units is not None:
+        resources["gpu_units"] = gpu_units
+    return resources
 
 
 def send_heartbeat(endpoint: str, node_id: str, token: str, payload: dict[str, object], timeout: int = 10) -> None:
@@ -60,12 +59,13 @@ def run() -> None:
     node_id = os.environ["UCF_NODE_ID"]
     token = os.environ["UCF_NODE_TOKEN"]
     interval = int(os.getenv("UCF_HEARTBEAT_INTERVAL_SECONDS", "15"))
-    gpu_units = int(os.getenv("UCF_GPU_UNITS", "0"))
+    gpu_value = os.getenv("UCF_GPU_UNITS")
+    gpu_units = int(gpu_value) if gpu_value is not None else None
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}", node_id):
         raise ValueError("UCF_NODE_ID contains unsupported characters or has an invalid length")
     if interval < 5 or interval > 300:
         raise ValueError("UCF_HEARTBEAT_INTERVAL_SECONDS must be between 5 and 300")
-    if gpu_units < 0:
+    if gpu_units is not None and gpu_units < 0:
         raise ValueError("UCF_GPU_UNITS cannot be negative")
 
     stop = threading.Event()
