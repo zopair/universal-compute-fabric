@@ -47,16 +47,19 @@ def enroll_node(db: Session, node: ComputeNode) -> tuple[NodeRecord, str | None]
             node_id=node.node_id,
             credential_hash=hash_token(token),
             created_at=now,
-            last_seen_at=now,
-            lease_expires_at=now + timedelta(seconds=settings.node_lease_seconds),
-            status="active",
+            last_seen_at=None,
+            lease_expires_at=None,
+            status="pending",
         )
         db.add(record)
         add_audit(db, "node.enrolled", node.node_id)
     else:
-        record.status = "active"
-        record.last_seen_at = now
-        record.lease_expires_at = now + timedelta(seconds=settings.node_lease_seconds)
+        # A re-enrollment is not proof that the worker is online; wait for its next heartbeat.
+        record.status = "pending"
+        record.last_seen_at = None
+        record.lease_expires_at = None
+        record.available_cpu_millicores = None
+        record.available_memory_mb = None
         record.updated_at = now
         add_audit(db, "node.inventory_updated", node.node_id)
 
