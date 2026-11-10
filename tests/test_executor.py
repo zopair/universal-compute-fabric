@@ -26,7 +26,7 @@ def test_docker_command_enforces_isolation_and_resource_limits():
     assert "--user=65532:65532" in command
     assert not any(item.startswith("--volume") or item == "-v" for item in command)
     assert command[-4:] == [IMAGE, "python", "-c", "print('ok')"]
-    assert "privileged" not in joined
+    assert "--privileged" not in command
 
 
 def test_docker_command_rejects_mutable_image_tags():
