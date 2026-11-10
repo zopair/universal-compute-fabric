@@ -70,7 +70,7 @@ def post_json(endpoint: str, path: str, token: str, payload: dict[str, object] |
             raise RuntimeError(f"Control-plane request returned HTTP {response.status}")
         data = json.loads(response.read().decode("utf-8"))
         if not isinstance(data, dict):
-            raise RuntimeError("Control-plane response must be a JSON object")
+            raise TypeError("Control-plane response must be a JSON object")
         return data
 
 
@@ -85,7 +85,7 @@ def execute_one_task(endpoint: str, token: str, executor: DockerExecutor) -> boo
     if task is None:
         return False
     if not isinstance(task, dict) or not isinstance(task.get("task_id"), str):
-        raise RuntimeError("Control plane returned an invalid task claim")
+        raise TypeError("Control plane returned an invalid task claim")
     result = executor.execute(task)
     completion = {
         "status": result.status,
