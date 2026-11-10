@@ -162,3 +162,16 @@ def test_node_identifier_rejects_path_unsafe_characters(client):
         headers={"X-UCF-Admin-Key": "test-admin-key"},
     )
     assert response.status_code == 422
+
+
+
+def test_pending_node_is_not_schedulable_before_heartbeat(client):
+    headers = {"X-UCF-Admin-Key": "test-admin-key"}
+    enrolled = client.put("/v1/nodes/edge-1", json=node_payload(), headers=headers)
+    assert enrolled.status_code == 200
+    response = client.post(
+        "/v1/schedule",
+        json={"workload_id": "early-job"},
+        headers=headers,
+    )
+    assert response.status_code == 409
