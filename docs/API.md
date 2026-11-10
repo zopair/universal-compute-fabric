@@ -13,7 +13,7 @@ Administrative endpoints accept `X-UCF-Admin-Key`. Configure `UCF_ADMIN_API_KEY`
 
 ## Node enrollment
 
-`PUT /v1/nodes/{node_id}` requires the admin key and a `ComputeNode` JSON body. The first enrollment returns a one-time `node_token`. Store it securely on the worker. The database stores only its SHA-256 hash. Re-enrollment updates inventory but does not silently rotate an existing credential.
+`PUT /v1/nodes/{node_id}` requires the admin key and a `ComputeNode` JSON body. The first enrollment returns a one-time `node_token`. Store it securely on the worker. The database stores only its SHA-256 hash. A newly enrolled or re-enrolled node remains `pending` and is not schedulable until it sends an authenticated heartbeat. Re-enrollment does not silently rotate an existing credential.
 
 ## Heartbeat and leases
 
