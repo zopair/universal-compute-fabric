@@ -17,13 +17,17 @@ Administrative endpoints accept `X-UCF-Admin-Key`. Configure `UCF_ADMIN_API_KEY`
 
 ## Heartbeat and leases
 
-`POST /v1/nodes/{node_id}/heartbeat` requires `Authorization: Bearer <node_token>`. Optional resource fields refresh inventory. A successful heartbeat renews the node lease (default 45 seconds).
+`POST /v1/nodes/{node_id}/heartbeat` requires `Authorization: Bearer <node_token>`. Optional resource fields refresh inventory. A successful heartbeat renews the node lease (default 45 seconds). The Linux worker agent in `services/worker-agent` reports CPU and RAM capacity.
 
 Nodes whose lease expires are marked stale and excluded from scheduling. Expiry is checked during inventory and scheduling requests; a dedicated background reaper can be added when worker volume requires it.
 
 ## Inventory
 
 `GET /v1/nodes` lists active nodes. Administrators can request `?include_stale=true` to inspect stale records.
+
+## Credential rotation
+
+`POST /v1/nodes/{node_id}/rotate-token` requires the admin key and immediately invalidates the previous node token. The new token is returned once; securely deliver it to the worker before rotation or expect that worker to remain offline until reconfigured.
 
 ## Scheduling
 
