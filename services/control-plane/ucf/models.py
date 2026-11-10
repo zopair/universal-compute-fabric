@@ -102,9 +102,11 @@ class TaskResponse(BaseModel):
 
 class TaskClaimResponse(BaseModel):
     task: TaskResponse | None
+    claim_token: str | None = None
 
 
 class TaskCompletionRequest(BaseModel):
+    claim_token: str = Field(min_length=32, max_length=128)
     status: str = Field(pattern=r"^(succeeded|failed)$")
     exit_code: int = Field(ge=0, le=255)
     result: str | None = Field(default=None, max_length=65536)
