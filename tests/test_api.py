@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from ucf.database import get_db
-from ucf.entities import NodeRecord
+from ucf.entities import NodeRecord, TaskRecord
 from ucf.main import app
 
 
@@ -125,6 +125,8 @@ def test_task_submission_reserves_capacity_and_worker_claims(client):
     assert claim.status_code == 200
     assert claim.json()["task"]["status"] == "running"
     assert claim.json()["task"]["command"] == ["python", "-c", "print('ucf')"]
+    assert claim.json()["task"]["cpu_millicores"] == 2000
+    assert claim.json()["task"]["memory_mb"] == 2048
 
 
 def test_task_completion_releases_capacity_and_is_node_scoped(client):
@@ -202,3 +204,28 @@ def test_pending_node_is_not_schedulable_before_heartbeat(client):
     client.put("/v1/nodes/edge-1", json=node_payload(), headers=headers)
     response = client.post("/v1/schedule", json={"workload_id": "early-job"}, headers=headers)
     assert response.status_code == 409
+
+
+
+def test_expired_worker_claim_is_requeued_without_releasing_reservation(client):
+    admin, token = enroll_active_node(client)
+    assert client.post("/v1/tasks", json=task_payload(), headers=admin).status_code == 202
+    first = client.post("/v1/worker/tasks/claim", headers={"Authorization": f"Bearer {token}"})
+    assert first.json()["task"]["status"] == "running"
+
+    generator = db_session()
+    db = next(generator)
+    try:
+        task = db.get(TaskRecord, "task-1")
+        task.claim_expires_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+        db.commit()
+    finally:
+        db.close()
+        generator.close()
+
+    second = client.post("/v1/worker/tasks/claim", headers={"Authorization": f"Bearer {token}"})
+    assert second.status_code == 200
+    assert second.json()["task"]["status"] == "running"
+    assert second.json()["task"]["task_id"] == "task-1"
+    nodes = client.get("/v1/nodes", headers=admin).json()
+    assert nodes[0]["node"]["available_cpu_millicores"] == 5000
