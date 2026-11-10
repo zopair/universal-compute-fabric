@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from datetime import datetime
 from enum import StrEnum
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -51,3 +53,34 @@ class PlacementDecision(BaseModel):
     selected_node: ComputeNode | None = None
     candidates: list[CandidateScore] = Field(default_factory=list)
     explanation: str
+
+
+class NodeEnrollmentResponse(BaseModel):
+    node: ComputeNode
+    node_token: str | None
+    lease_seconds: int
+    credential_note: str
+
+
+class HeartbeatRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    cpu_millicores: int | None = Field(default=None, gt=0)
+    memory_mb: int | None = Field(default=None, gt=0)
+    gpu_units: int | None = Field(default=None, ge=0)
+    capabilities: set[str] | None = None
+    estimated_latency_ms: float | None = Field(default=None, ge=0)
+
+
+class HeartbeatResponse(BaseModel):
+    node_id: str
+    status: str
+    server_time: datetime
+    lease_expires_at: datetime
+    lease_seconds: int
+
+
+class NodeStatusResponse(BaseModel):
+    node: ComputeNode
+    status: str
+    last_seen_at: datetime | None
+    lease_expires_at: datetime | None
