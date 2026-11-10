@@ -127,6 +127,8 @@ def test_task_submission_reserves_capacity_and_worker_claims(client):
     assert claim.json()["task"]["command"] == ["python", "-c", "print('ucf')"]
     assert claim.json()["task"]["cpu_millicores"] == 2000
     assert claim.json()["task"]["memory_mb"] == 2048
+    assert isinstance(claim.json()["claim_token"], str)
+    assert len(claim.json()["claim_token"]) >= 32
 
 
 def test_task_completion_releases_capacity_and_is_node_scoped(client):
@@ -134,12 +136,13 @@ def test_task_completion_releases_capacity_and_is_node_scoped(client):
     assert client.post("/v1/tasks", json=task_payload(), headers=admin).status_code == 202
     claim = client.post("/v1/worker/tasks/claim", headers={"Authorization": f"Bearer {token}"})
     task_id = claim.json()["task"]["task_id"]
+    claim_token = claim.json()["claim_token"]
     wrong = client.post(f"/v1/worker/tasks/{task_id}/complete",
-                        json={"status": "succeeded", "exit_code": 0, "result": "ok"},
+                        json={"claim_token": claim_token, "status": "succeeded", "exit_code": 0, "result": "ok"},
                         headers={"Authorization": "Bearer another-node-token"})
     assert wrong.status_code == 401
     done = client.post(f"/v1/worker/tasks/{task_id}/complete",
-                       json={"status": "succeeded", "exit_code": 0, "result": "ok"},
+                       json={"claim_token": claim_token, "status": "succeeded", "exit_code": 0, "result": "ok"},
                        headers={"Authorization": f"Bearer {token}"})
     assert done.status_code == 200
     assert done.json()["status"] == "succeeded"
@@ -147,7 +150,7 @@ def test_task_completion_releases_capacity_and_is_node_scoped(client):
     assert nodes[0]["node"]["available_cpu_millicores"] == 7000
     assert nodes[0]["node"]["available_memory_mb"] == 12000
     duplicate = client.post(f"/v1/worker/tasks/{task_id}/complete",
-                            json={"status": "succeeded", "exit_code": 0},
+                            json={"claim_token": claim_token, "status": "succeeded", "exit_code": 0},
                             headers={"Authorization": f"Bearer {token}"})
     assert duplicate.status_code == 409
 
@@ -212,6 +215,7 @@ def test_expired_worker_claim_is_requeued_without_releasing_reservation(client):
     assert client.post("/v1/tasks", json=task_payload(), headers=admin).status_code == 202
     first = client.post("/v1/worker/tasks/claim", headers={"Authorization": f"Bearer {token}"})
     assert first.json()["task"]["status"] == "running"
+    first_claim_token = first.json()["claim_token"]
 
     generator = db_session()
     db = next(generator)
@@ -227,6 +231,20 @@ def test_expired_worker_claim_is_requeued_without_releasing_reservation(client):
     assert second.status_code == 200
     assert second.json()["task"]["status"] == "running"
     assert second.json()["task"]["task_id"] == "task-1"
+    second_claim_token = second.json()["claim_token"]
+    assert second_claim_token != first_claim_token
+    stale_completion = client.post(
+        "/v1/worker/tasks/task-1/complete",
+        json={"claim_token": first_claim_token, "status": "succeeded", "exit_code": 0},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert stale_completion.status_code == 409
+    valid_completion = client.post(
+        "/v1/worker/tasks/task-1/complete",
+        json={"claim_token": second_claim_token, "status": "succeeded", "exit_code": 0},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert valid_completion.status_code == 200
     nodes = client.get("/v1/nodes", headers=admin).json()
     assert nodes[0]["node"]["available_cpu_millicores"] == 5000
 
