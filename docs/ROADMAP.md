@@ -10,6 +10,7 @@
 
 ## M1 — Reliable control plane
 - [x] Open-source adoption plan and component selection
+- [x] Staged security approach documented for the experimental POC (`docs/SECURITY_STAGES.md`)
 - [x] PostgreSQL persistence and Alembic migration
 - [x] Per-node credentials and administrative API key
 - [x] Heartbeats, leases and stale-node exclusion
