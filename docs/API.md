@@ -19,8 +19,8 @@ All administrative endpoints use `X-UCF-Admin-Key`. Worker endpoints use the nod
 ## Task lifecycle (M2 foundation)
 - `POST /v1/tasks` — admin submits a task; the control plane selects an active node and atomically records a resource reservation. Returns HTTP 202.
 - `GET /v1/tasks/{task_id}` — admin reads task state and result.
-- `POST /v1/worker/tasks/claim` — authenticated worker claims the oldest pending task assigned to its node.
-- `POST /v1/worker/tasks/{task_id}/complete` — authenticated assigned worker reports `succeeded` or `failed`; terminal completion releases its reservation.
+- `POST /v1/worker/tasks/claim` — authenticated worker claims the oldest pending task assigned to its node and receives a one-time claim token.
+- `POST /v1/worker/tasks/{task_id}/complete` — authenticated assigned worker submits the claim token with `succeeded` or `failed`; terminal completion releases its reservation. Expired/reclaimed attempts receive a new token, so stale workers cannot complete a newer attempt.
 
 Task submission includes:
 - `workload`: placement requirements and requested CPU, memory and GPU.
@@ -28,4 +28,4 @@ Task submission includes:
 - `command`: argument array (never a shell command string).
 - `timeout_seconds`: bounded to 1–300 seconds.
 
-Reservations are subtracted from reported live capacity when subsequent placements are evaluated. PostgreSQL row-level locking serializes reservation attempts for the same node. The claim response includes CPU, memory and GPU reservation values required by the executor. Execution is at-least-once around worker crashes or lost completion acknowledgements; workloads must be idempotent until stronger deduplication is implemented. The Linux worker can execute tasks only when explicitly enabled with `UCF_EXECUTION_ENABLED=true` and an exact digest-pinned `UCF_ALLOWED_IMAGE_DIGESTS` allowlist. The initial adapter is CPU-only and requires a local Docker image (`--pull=never`). Docker runs with network disabled, a read-only root filesystem, dropped capabilities, non-root UID, CPU/memory/PID limits, bounded execution time and bounded captured output. The executor is a POC isolation boundary, not a production multi-tenant security guarantee.
+The claim token is returned only by the claim endpoint; only its SHA-256 hash is persisted. Completion compares the supplied token in constant time and clears the hash after terminal completion or claim expiry. Reservations are subtracted from reported live capacity when subsequent placements are evaluated. PostgreSQL row-level locking serializes reservation attempts for the same node. The claim response includes CPU, memory and GPU reservation values required by the executor. Execution is at-least-once around worker crashes or lost completion acknowledgements; workloads must be idempotent until stronger deduplication is implemented. The Linux worker can execute tasks only when explicitly enabled with `UCF_EXECUTION_ENABLED=true` and an exact digest-pinned `UCF_ALLOWED_IMAGE_DIGESTS` allowlist. The initial adapter is CPU-only and requires a local Docker image (`--pull=never`). Docker runs with network disabled, a read-only root filesystem, dropped capabilities, non-root UID, CPU/memory/PID limits, bounded execution time and bounded captured output. The executor is a POC isolation boundary, not a production multi-tenant security guarantee.
