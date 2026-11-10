@@ -13,20 +13,23 @@
 - [x] PostgreSQL persistence and Alembic migration
 - [x] Per-node credentials and administrative API key
 - [x] Heartbeats, leases and stale-node exclusion
+- [x] Pending-to-active node lifecycle after first heartbeat
+- [x] Separate total capacity from live available CPU/RAM
 - [x] Basic audit events
 - [x] OpenTelemetry tracing integration
 - [x] Linux host telemetry/heartbeat agent (no workload execution)
-- [x] Admin-controlled node credential rotation
+- [x] Admin-controlled node credential rotation and reactivation gate
 - [ ] OIDC, RBAC and tenant quotas
 - [ ] Metrics/log export dashboard and alerting
 - [ ] Dedicated lease reaper and load testing
+- [ ] Dependency lockfile, SBOM and vulnerability scanning
 
 ## M2 — Execution adapters
 - [ ] Container executor (containerd/Kubernetes)
 - [ ] Firecracker/KVM microVM executor
 - [ ] Wasmtime executor for portable modules
 - [ ] Signed workload manifests and policy
-- [ ] Idempotent lifecycle, cancellation and retries
+- [ ] Atomic resource reservations, idempotent lifecycle, cancellation and retries
 
 ## M3 — Device clients and sessions
 - [ ] Android agent POC
