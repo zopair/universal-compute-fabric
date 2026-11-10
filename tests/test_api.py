@@ -40,7 +40,7 @@ def test_enroll_heartbeat_and_node_scoped_credential(client):
 
     beat = client.post(
         "/v1/nodes/edge-1/heartbeat",
-        json={"cpu_millicores": 6000, "capabilities": ["cpu"]},
+        json={"available_cpu_millicores": 6000, "available_memory_mb": 4096},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert beat.status_code == 200
