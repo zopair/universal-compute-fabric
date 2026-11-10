@@ -23,6 +23,8 @@ def node_to_model(record: NodeRecord) -> ComputeNode:
         capabilities=set(record.capabilities or []),
         cpu_millicores=record.cpu_millicores,
         memory_mb=record.memory_mb,
+        available_cpu_millicores=record.available_cpu_millicores,
+        available_memory_mb=record.available_memory_mb,
         gpu_units=record.gpu_units,
         estimated_latency_ms=record.estimated_latency_ms,
         estimated_cost_per_minute=record.estimated_cost_per_minute,
@@ -76,7 +78,7 @@ def enroll_node(db: Session, node: ComputeNode) -> tuple[NodeRecord, str | None]
 
 def refresh_heartbeat(db: Session, record: NodeRecord, heartbeat: HeartbeatRequest) -> NodeRecord:
     now = utcnow()
-    for field in ("cpu_millicores", "memory_mb", "gpu_units", "estimated_latency_ms"):
+    for field in ("available_cpu_millicores", "available_memory_mb", "gpu_units", "estimated_latency_ms"):
         value = getattr(heartbeat, field)
         if value is not None:
             setattr(record, field, value)
