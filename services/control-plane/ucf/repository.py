@@ -195,6 +195,17 @@ def create_task_with_reservation(db: Session, payload: TaskCreateRequest, node_i
 
 def claim_next_task(db: Session, node_id: str) -> TaskRecord | None:
     now = utcnow()
+    expired_claims = db.execute(select(TaskRecord).where(
+        TaskRecord.assigned_node_id == node_id, TaskRecord.status == "running",
+        TaskRecord.claim_expires_at.is_not(None), TaskRecord.claim_expires_at <= now,
+    ).with_for_update()).scalars().all()
+    for expired in expired_claims:
+        expired.status = "pending"
+        expired.started_at = None
+        expired.claim_expires_at = None
+        add_audit(db, "task.claim_expired", expired.task_id, f"node={node_id}")
+    if expired_claims:
+        db.flush()
     task = db.execute(select(TaskRecord).where(
         TaskRecord.assigned_node_id == node_id, TaskRecord.status == "pending",
     ).order_by(TaskRecord.created_at, TaskRecord.task_id).with_for_update(skip_locked=True)).scalars().first()
