@@ -2,7 +2,7 @@
 
 Hybrid edge–cloud workload orchestration for heterogeneous devices.
 
-> Status: foundation prototype. UCF is not a universal remote CPU, transparent WAN RAM, or a mechanism for running every mobile app remotely. The first milestone is a measurable control plane that proposes workload placement.
+> Status: M1 control-plane implementation. UCF proposes placement for explicit workloads; it is not a universal remote CPU, transparent WAN RAM, or a mechanism for running every mobile app remotely. Workload execution is not enabled yet.
 
 ## Principles
 - Keep interaction loops, safety-critical control, sensors, security boundaries and offline fallback local.
@@ -11,27 +11,37 @@ Hybrid edge–cloud workload orchestration for heterogeneous devices.
 - Measure total-system energy, silicon allocation, latency, bandwidth and cost per active user.
 
 ## Layout
-- `services/control-plane`: FastAPI API and deterministic placement engine.
-- `docs/`: architecture, API, roadmap and ADRs.
-- `deploy/`: Docker development lab.
-- `tests/`: unit and API tests.
+- `services/control-plane`: FastAPI control plane, SQLAlchemy persistence, leases and placement.
+- `services/control-plane/migrations`: Alembic schema migrations.
+- `docs/`: architecture, API, roadmap, ADRs and technology assessment.
+- `deploy/`: Docker development lab with PostgreSQL.
+- `tests/`: scheduler and API tests.
 - `.github/workflows/`: CI.
 
-## Run
-```bash
-docker compose -f deploy/docker-compose.yml up --build
-```
-API: http://localhost:8000 · OpenAPI: http://localhost:8000/docs · Health: http://localhost:8000/health
+## Run the development lab
+1. Copy `.env.example` to `.env`.
+2. Set unique values for `POSTGRES_PASSWORD` and `UCF_ADMIN_API_KEY`.
+3. Start the services:
 
-Local tests:
+```bash
+docker compose --env-file .env -f deploy/docker-compose.yml up --build
+```
+
+API: http://localhost:8000 · OpenAPI: http://localhost:8000/docs · Liveness: http://localhost:8000/health · Readiness: http://localhost:8000/ready
+
+## Local development
 ```bash
 python -m pip install -e "services/control-plane[dev]"
-pytest
+DATABASE_URL=sqlite:///./ucf.db alembic upgrade head
+pytest -q
+ruff check services tests
 ```
+
+Administrative endpoints use `X-UCF-Admin-Key`. First node enrollment returns a one-time node bearer token; store it securely. Workers renew their lease through `POST /v1/nodes/{node_id}/heartbeat`. Scheduling excludes expired leases.
 
 See [architecture](docs/ARCHITECTURE.md), [API](docs/API.md), [roadmap](docs/ROADMAP.md), [open-source technology assessment](docs/OPEN_SOURCE_ASSESSMENT.md), [contributing](CONTRIBUTING.md).
 
-## Security warning
-Development-only: no authentication, tenant isolation, persistence, durable queue or workload executor. Do not expose publicly or submit sensitive workloads.
+## Security status
+M1 includes persistent inventory, a single admin secret, per-node bearer credentials, lease expiry and audit events. It does **not** yet include OIDC/RBAC, tenant isolation, device attestation, mTLS, rate limiting, secret rotation workflow, workload execution isolation, or a production threat-model review. Do not expose the development lab directly to the public internet or submit sensitive workloads.
 
 Apache-2.0. See [LICENSE](LICENSE).
