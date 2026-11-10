@@ -1,11 +1,11 @@
 from logging.config import fileConfig
-import os
-import sys
+from pathlib import Path
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-sys.path.insert(0, os.path.abspath("services/control-plane"))
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from ucf.config import settings
 from ucf.database import Base
