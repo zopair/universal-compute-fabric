@@ -4,7 +4,7 @@ import os
 from dataclasses import dataclass
 
 
-@dataclass(frozen=True)
+@dataclass
 class Settings:
     environment: str
     database_url: str
