@@ -29,7 +29,7 @@ def build_docker_command(task: dict[str, Any], container_name: str) -> list[str]
     if not isinstance(image, str) or not _IMAGE_DIGEST.fullmatch(image):
         raise ValueError("Task image must be pinned to a SHA-256 digest")
     if not isinstance(command, list) or not command or any(
-        not isinstance(arg, str) or not arg or len(arg) > 4096 for arg in command
+        not isinstance(arg, str) or not arg or "\\x00" in arg or len(arg) > 4096 for arg in command
     ):
         raise ValueError("Task command must be a non-empty argument array")
     if cpu_millicores < 100 or memory_mb < 64 or not 1 <= timeout_seconds <= 300:
@@ -84,6 +84,11 @@ class DockerExecutor:
             return ExecutionResult("failed", 126, "", "", str(exc))
 
         try:
+            # A previous worker process may have died while its container kept running.
+            subprocess.run(
+                ["docker", "rm", "--force", container_name],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5, check=False,
+            )
             process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except OSError as exc:
             return ExecutionResult("failed", 127, "", "", f"Docker runtime unavailable: {exc}")
@@ -100,10 +105,13 @@ class DockerExecutor:
         try:
             exit_code = process.wait(timeout=timeout_seconds)
         except subprocess.TimeoutExpired:
-            subprocess.run(
-                ["docker", "kill", container_name],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5, check=False,
-            )
+            try:
+                subprocess.run(
+                    ["docker", "kill", container_name],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5, check=False,
+                )
+            except (OSError, subprocess.SubprocessError):
+                pass
             try:
                 process.wait(timeout=5)
             except subprocess.TimeoutExpired:
