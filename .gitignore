@@ -12,4 +12,8 @@ htmlcov/
 dist/
 build/
 .DS_Store
-\n# Local runtime state\n*.db\n*.sqlite\n*.sqlite3\n
+
+# Local runtime state
+*.db
+*.sqlite
+*.sqlite3
