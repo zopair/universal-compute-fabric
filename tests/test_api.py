@@ -115,3 +115,37 @@ def test_invalid_node_token_rejected(client):
         headers={"Authorization": "Bearer invalid-token"},
     )
     assert response.status_code == 401
+
+
+
+def test_admin_rotation_invalidates_previous_node_token(client):
+    admin = {"X-UCF-Admin-Key": "test-admin-key"}
+    enrolled = client.put("/v1/nodes/edge-1", json=node_payload(), headers=admin)
+    old_token = enrolled.json()["node_token"]
+
+    rotated = client.post("/v1/nodes/edge-1/rotate-token", headers=admin)
+    assert rotated.status_code == 200
+    new_token = rotated.json()["node_token"]
+    assert new_token != old_token
+
+    old_heartbeat = client.post(
+        "/v1/nodes/edge-1/heartbeat",
+        json={},
+        headers={"Authorization": f"Bearer {old_token}"},
+    )
+    new_heartbeat = client.post(
+        "/v1/nodes/edge-1/heartbeat",
+        json={},
+        headers={"Authorization": f"Bearer {new_token}"},
+    )
+    assert old_heartbeat.status_code == 401
+    assert new_heartbeat.status_code == 200
+
+
+def test_node_identifier_rejects_path_unsafe_characters(client):
+    response = client.put(
+        "/v1/nodes/invalid%2Fnode",
+        json=node_payload("invalid/node"),
+        headers={"X-UCF-Admin-Key": "test-admin-key"},
+    )
+    assert response.status_code == 422
