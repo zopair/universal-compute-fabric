@@ -8,7 +8,7 @@ import signal
 import threading
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 import psutil
 
@@ -19,6 +19,8 @@ def validate_endpoint(endpoint: str) -> str:
     parsed = urlparse(endpoint)
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
         raise ValueError("UCF_CONTROL_PLANE_URL must be an absolute HTTP(S) URL")
+    if parsed.username or parsed.password or parsed.query or parsed.fragment:
+        raise ValueError("UCF_CONTROL_PLANE_URL must not contain credentials, query or fragment")
     host = (parsed.hostname or "").lower()
     if parsed.scheme == "http" and host not in {"localhost", "127.0.0.1", "::1"}:
         raise ValueError("Remote control-plane connections must use HTTPS")
@@ -54,7 +56,12 @@ def send_heartbeat(endpoint: str, node_id: str, token: str, payload: dict[str, o
         },
         method="POST",
     )
-    with urlopen(request, timeout=timeout) as response:
+    class RejectRedirects(HTTPRedirectHandler):
+        def redirect_request(self, req, fp, code, msg, headers, new_url):
+            return None
+
+    opener = build_opener(RejectRedirects)
+    with opener.open(request, timeout=timeout) as response:
         if response.status != 200:
             raise RuntimeError(f"Heartbeat returned HTTP {response.status}")
 
