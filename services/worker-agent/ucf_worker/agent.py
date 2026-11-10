@@ -79,8 +79,7 @@ def send_heartbeat(endpoint: str, node_id: str, token: str, payload: dict[str, o
     post_json(endpoint, f"/v1/nodes/{node_id}/heartbeat", token, payload, timeout)
 
 
-def execute_one_task(endpoint: str, node_id: str, token: str,
-                     executor: DockerExecutor) -> bool:
+def execute_one_task(endpoint: str, token: str, executor: DockerExecutor) -> bool:
     response = post_json(endpoint, "/v1/worker/tasks/claim", token)
     task = response.get("task")
     if task is None:
@@ -92,7 +91,7 @@ def execute_one_task(endpoint: str, node_id: str, token: str,
         "status": result.status,
         "exit_code": result.exit_code,
         "result": result.stdout,
-        "error": (result.error or result.stderr or None),
+        "error": (result.error or result.stderr or None)[:8192] if (result.error or result.stderr) else None,
     }
     post_json(endpoint, f"/v1/worker/tasks/{task['task_id']}/complete", token, completion)
     LOG.info("Task %s finished with status %s", task["task_id"], result.status)
@@ -144,7 +143,7 @@ def run() -> None:
             send_heartbeat(endpoint, node_id, token, collect_resources(gpu_units))
             LOG.info("Heartbeat accepted for node %s", node_id)
             if executor is not None:
-                execute_one_task(endpoint, node_id, token, executor)
+                execute_one_task(endpoint, token, executor)
             backoff = 2
             stop.wait(interval)
         except (HTTPError, URLError, TimeoutError, OSError, RuntimeError, subprocess.SubprocessError) as exc:
