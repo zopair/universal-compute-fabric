@@ -238,3 +238,13 @@ def test_node_with_task_history_cannot_be_deleted(client):
     response = client.delete("/v1/nodes/edge-1", headers=admin)
     assert response.status_code == 409
     assert "task history" in response.json()["detail"]
+
+
+
+def test_gpu_task_is_rejected_until_gpu_runtime_exists(client):
+    admin, _ = enroll_active_node(client)
+    payload = task_payload()
+    payload["workload"]["gpu_units"] = 1
+    response = client.post("/v1/tasks", json=payload, headers=admin)
+    assert response.status_code == 422
+    assert "GPU tasks are not supported" in str(response.json())
