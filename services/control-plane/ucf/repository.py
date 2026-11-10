@@ -65,6 +65,8 @@ def enroll_node(db: Session, node: ComputeNode) -> tuple[NodeRecord, str | None]
     record.capabilities = sorted(node.capabilities)
     record.cpu_millicores = node.cpu_millicores
     record.memory_mb = node.memory_mb
+    record.available_cpu_millicores = node.available_cpu_millicores
+    record.available_memory_mb = node.available_memory_mb
     record.gpu_units = node.gpu_units
     record.estimated_latency_ms = node.estimated_latency_ms
     record.estimated_cost_per_minute = node.estimated_cost_per_minute
