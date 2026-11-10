@@ -48,6 +48,7 @@ class TaskRecord(Base):
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     claim_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    claim_token_hash: Mapped[str | None] = mapped_column(String(64))
     exit_code: Mapped[int | None] = mapped_column(Integer)
     result: Mapped[str | None] = mapped_column(Text)
     error: Mapped[str | None] = mapped_column(Text)
