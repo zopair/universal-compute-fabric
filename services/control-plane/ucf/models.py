@@ -60,7 +60,7 @@ class PlacementDecision(BaseModel):
 class TaskCreateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     workload: WorkloadRequest
-    image: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._/:@-]{1,254}@sha256:[a-f0-9]{64}$")
+    image: str = Field(max_length=320, pattern=r"^[A-Za-z0-9][A-Za-z0-9._/:@-]{1,254}@sha256:[a-f0-9]{64}$")
     command: list[str] = Field(min_length=1, max_length=64)
     timeout_seconds: int = Field(default=30, ge=1, le=300)
 
@@ -75,7 +75,7 @@ class TaskCreateRequest(BaseModel):
     @field_validator("command")
     @classmethod
     def validate_command(cls, value: list[str]) -> list[str]:
-        if any(not item or len(item) > 4096 for item in value):
+        if any(not item or "\x00" in item or len(item) > 4096 for item in value):
             raise ValueError("Command arguments must be non-empty and at most 4096 characters")
         if sum(len(item) for item in value) > 16384:
             raise ValueError("Command payload is too large")
