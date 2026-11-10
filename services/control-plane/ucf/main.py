@@ -87,7 +87,11 @@ def rotate_token(node_id: str, db: Session = Depends(get_db)) -> dict[str, str]:
 
 @app.delete("/v1/nodes/{node_id}", dependencies=[Depends(require_admin)])
 def remove_node(node_id: str, db: Session = Depends(get_db)) -> dict[str, str]:
-    if not delete_node(db, node_id):
+    try:
+        deleted = delete_node(db, node_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    if not deleted:
         raise HTTPException(status_code=404, detail="Node not found")
     return {"status": "deleted", "node_id": node_id}
 
