@@ -259,6 +259,11 @@ def delete_node(db: Session, node_id: str) -> bool:
     record = db.get(NodeRecord, node_id)
     if record is None:
         return False
+    has_task_history = db.execute(
+        select(TaskRecord.task_id).where(TaskRecord.assigned_node_id == node_id).limit(1)
+    ).first()
+    if has_task_history:
+        raise ValueError("Node has task history and cannot be deleted; retain it for auditability")
     add_audit(db, "node.deleted", node_id)
     db.delete(record)
     db.commit()
