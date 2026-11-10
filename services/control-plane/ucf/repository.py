@@ -31,6 +31,7 @@ def task_to_model(record: TaskRecord) -> TaskResponse:
     return TaskResponse(
         task_id=record.task_id, status=record.status, assigned_node_id=record.assigned_node_id,
         image=record.image, command=record.command, timeout_seconds=record.timeout_seconds,
+        cpu_millicores=record.cpu_millicores, memory_mb=record.memory_mb, gpu_units=record.gpu_units,
         created_at=record.created_at, started_at=record.started_at,
         completed_at=record.completed_at, exit_code=record.exit_code,
         result=record.result, error=record.error,
