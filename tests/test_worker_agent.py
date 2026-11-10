@@ -22,3 +22,10 @@ def test_resources_report_only_observed_values():
 def test_gpu_capacity_is_included_only_when_explicitly_configured():
     resources = collect_resources(gpu_units=1)
     assert resources["gpu_units"] == 1
+
+
+def test_endpoint_rejects_embedded_credentials_and_query_strings():
+    with pytest.raises(ValueError):
+        validate_endpoint("https://user:secret@compute.example.com")
+    with pytest.raises(ValueError):
+        validate_endpoint("https://compute.example.com/?token=abc")
