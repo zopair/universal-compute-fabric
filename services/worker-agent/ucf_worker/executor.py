@@ -29,7 +29,7 @@ def build_docker_command(task: dict[str, Any], container_name: str) -> list[str]
     if not isinstance(image, str) or not _IMAGE_DIGEST.fullmatch(image):
         raise ValueError("Task image must be pinned to a SHA-256 digest")
     if not isinstance(command, list) or not command or any(
-        not isinstance(arg, str) or not arg or "\\x00" in arg or len(arg) > 4096 for arg in command
+        not isinstance(arg, str) or not arg or "\x00" in arg or len(arg) > 4096 for arg in command
     ):
         raise ValueError("Task command must be a non-empty argument array")
     if cpu_millicores < 100 or memory_mb < 64 or not 1 <= timeout_seconds <= 300:
