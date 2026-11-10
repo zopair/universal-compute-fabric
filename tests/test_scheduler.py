@@ -46,3 +46,24 @@ def test_no_eligible_node():
 def test_tie_break_is_deterministic():
     decision = schedule(make_job(), [make_node("z"), make_node("a")])
     assert decision.selected_node.node_id == "a"
+
+
+
+def test_live_available_capacity_overrides_total_host_capacity():
+    overloaded = make_node(
+        "busy",
+        cpu_millicores=16000,
+        memory_mb=32768,
+        available_cpu_millicores=500,
+        available_memory_mb=256,
+    )
+    healthy = make_node(
+        "ready",
+        cpu_millicores=16000,
+        memory_mb=32768,
+        available_cpu_millicores=8000,
+        available_memory_mb=8192,
+    )
+    decision = schedule(make_job(), [overloaded, healthy])
+    assert decision.status == "placement_proposed"
+    assert decision.selected_node.node_id == "ready"
