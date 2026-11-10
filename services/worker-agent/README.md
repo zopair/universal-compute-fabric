@@ -41,4 +41,4 @@ For local development only, `http://127.0.0.1:8000` is allowed. Remote control-p
 
 Optional settings: `UCF_HEARTBEAT_INTERVAL_SECONDS` (5–300), `UCF_GPU_UNITS` (manually declared total GPU units; omitted by default so the agent never overwrites GPU inventory), and `UCF_LOG_LEVEL`. CPU availability is estimated from sampled system utilization; available RAM comes from the OS memory report. These are short-lived estimates, not reservations or guaranteed capacity.
 
-The administrator must set realistic region, trust, latency and cost metadata at enrollment. This agent reports CPU/RAM capacity only; it does not benchmark workload latency or automatically discover GPU hardware.
+The administrator must set realistic region, trust, latency and cost metadata at enrollment. This agent reports available CPU/RAM only; it does not benchmark workload-path latency or automatically discover GPU hardware.
