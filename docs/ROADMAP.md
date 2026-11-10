@@ -32,7 +32,10 @@
 - [x] Worker-side Docker executor with network disabled and resource limits
 - [x] Worker polling, execution and result reporting loop
 - [x] Requeue expired worker claims while retaining their reservation
-- [ ] Validate runtime isolation and failure behavior with integration tests
+- [x] Fence stale/expired task attempts with one-time claim tokens
+- [x] Verify PostgreSQL row-lock reservations with concurrent submissions
+- [x] Run a digest-pinned Docker executor smoke test in CI
+- [ ] Test worker crash recovery, daemon failure and hostile multi-tenant isolation
 - [ ] Firecracker/KVM microVM executor
 - [ ] Wasmtime executor for portable modules
 - [ ] Signed workload manifests and policy
