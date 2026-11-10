@@ -229,3 +229,12 @@ def test_expired_worker_claim_is_requeued_without_releasing_reservation(client):
     assert second.json()["task"]["task_id"] == "task-1"
     nodes = client.get("/v1/nodes", headers=admin).json()
     assert nodes[0]["node"]["available_cpu_millicores"] == 5000
+
+
+
+def test_node_with_task_history_cannot_be_deleted(client):
+    admin, _ = enroll_active_node(client)
+    assert client.post("/v1/tasks", json=task_payload(), headers=admin).status_code == 202
+    response = client.delete("/v1/nodes/edge-1", headers=admin)
+    assert response.status_code == 409
+    assert "task history" in response.json()["detail"]
