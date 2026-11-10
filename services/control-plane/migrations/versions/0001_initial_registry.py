@@ -36,6 +36,7 @@ def upgrade() -> None:
     op.create_index("ix_compute_nodes_region", "compute_nodes", ["region"])
     op.create_index("ix_compute_nodes_status", "compute_nodes", ["status"])
     op.create_index("ix_compute_nodes_lease_expires_at", "compute_nodes", ["lease_expires_at"])
+    op.create_index("ix_compute_nodes_credential_hash", "compute_nodes", ["credential_hash"], unique=True)
     op.create_table(
         "audit_events",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
@@ -54,6 +55,7 @@ def downgrade() -> None:
     op.drop_index("ix_audit_events_subject_id", table_name="audit_events")
     op.drop_index("ix_audit_events_event_type", table_name="audit_events")
     op.drop_table("audit_events")
+    op.drop_index("ix_compute_nodes_credential_hash", table_name="compute_nodes")
     op.drop_index("ix_compute_nodes_lease_expires_at", table_name="compute_nodes")
     op.drop_index("ix_compute_nodes_status", table_name="compute_nodes")
     op.drop_index("ix_compute_nodes_region", table_name="compute_nodes")
