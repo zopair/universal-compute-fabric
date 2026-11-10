@@ -32,7 +32,7 @@ API: http://localhost:8000 · OpenAPI: http://localhost:8000/docs · Liveness: h
 
 ## Local development
 ```bash
-python -m pip install -e "services/control-plane[dev]"
+python -m pip install -e "services/control-plane[dev]" -e services/worker-agent
 DATABASE_URL=sqlite:///./ucf.db alembic upgrade head
 pytest -q
 ruff check services tests
@@ -43,6 +43,6 @@ Administrative endpoints use `X-UCF-Admin-Key`. First node enrollment returns a 
 See [architecture](docs/ARCHITECTURE.md), [API](docs/API.md), [roadmap](docs/ROADMAP.md), [open-source technology assessment](docs/OPEN_SOURCE_ASSESSMENT.md), [contributing](CONTRIBUTING.md).
 
 ## Security status
-M1 includes persistent inventory, a single admin secret, per-node bearer credentials, lease expiry and audit events. It does **not** yet include OIDC/RBAC, tenant isolation, device attestation, mTLS, rate limiting, secret rotation workflow, workload execution isolation, or a production threat-model review. Do not expose the development lab directly to the public internet or submit sensitive workloads.
+M1 includes persistent inventory, a single admin secret, per-node bearer credentials, lease expiry and audit events. It does **not** yet include OIDC/RBAC, tenant isolation, device attestation, mTLS, rate limiting, admin-key rotation automation, workload execution isolation, or a production threat-model review. Do not expose the development lab directly to the public internet or submit sensitive workloads.
 
 Apache-2.0. See [LICENSE](LICENSE).
