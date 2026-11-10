@@ -227,6 +227,13 @@ def test_expired_worker_claim_is_requeued_without_releasing_reservation(client):
         db.close()
         generator.close()
 
+    expired_completion = client.post(
+        "/v1/worker/tasks/task-1/complete",
+        json={"claim_token": first_claim_token, "status": "succeeded", "exit_code": 0},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert expired_completion.status_code == 409
+
     second = client.post("/v1/worker/tasks/claim", headers={"Authorization": f"Bearer {token}"})
     assert second.status_code == 200
     assert second.json()["task"]["status"] == "running"
