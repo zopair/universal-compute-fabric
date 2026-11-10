@@ -239,14 +239,16 @@ def test_expired_worker_claim_is_requeued_without_releasing_reservation(client):
         headers={"Authorization": f"Bearer {token}"},
     )
     assert stale_completion.status_code == 409
+    nodes_while_requeued = client.get("/v1/nodes", headers=admin).json()
+    assert nodes_while_requeued[0]["node"]["available_cpu_millicores"] == 5000
     valid_completion = client.post(
         "/v1/worker/tasks/task-1/complete",
         json={"claim_token": second_claim_token, "status": "succeeded", "exit_code": 0},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert valid_completion.status_code == 200
-    nodes = client.get("/v1/nodes", headers=admin).json()
-    assert nodes[0]["node"]["available_cpu_millicores"] == 5000
+    nodes_after_completion = client.get("/v1/nodes", headers=admin).json()
+    assert nodes_after_completion[0]["node"]["available_cpu_millicores"] == 7000
 
 
 
