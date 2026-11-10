@@ -72,7 +72,7 @@ jobs:
           EOF
           as -o smoke.o smoke.s
           ld -o smoke smoke.o
-          printf 'FROM scratch\\nCOPY smoke /smoke\\n' > Dockerfile.smoke
+          printf '%s\\n' 'FROM scratch' 'COPY smoke /smoke' > Dockerfile.smoke
           docker build -f Dockerfile.smoke -t 127.0.0.1:5000/ucf-smoke:ci .
           docker push 127.0.0.1:5000/ucf-smoke:ci
           IMAGE_REF="$(docker image inspect --format '{{index .RepoDigests 0}}' 127.0.0.1:5000/ucf-smoke:ci)"
