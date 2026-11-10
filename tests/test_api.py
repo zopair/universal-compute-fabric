@@ -61,7 +61,13 @@ def test_enroll_heartbeat_and_node_scoped_credential(client):
 
 def test_stale_node_is_not_scheduled(client):
     headers = {"X-UCF-Admin-Key": "test-admin-key"}
-    client.put("/v1/nodes/edge-1", json=node_payload(), headers=headers)
+    enrolled = client.put("/v1/nodes/edge-1", json=node_payload(), headers=headers)
+    token = enrolled.json()["node_token"]
+    client.post(
+        "/v1/nodes/edge-1/heartbeat",
+        json={"available_cpu_millicores": 7000, "available_memory_mb": 12000},
+        headers={"Authorization": f"Bearer {token}"},
+    )
 
     db_generator = app.dependency_overrides[get_db]()
     db = next(db_generator)
@@ -91,7 +97,14 @@ def test_stale_node_is_not_scheduled(client):
 
 def test_schedule_uses_persisted_live_inventory(client):
     headers = {"X-UCF-Admin-Key": "test-admin-key"}
-    client.put("/v1/nodes/edge-1", json=node_payload(), headers=headers)
+    enrolled = client.put("/v1/nodes/edge-1", json=node_payload(), headers=headers)
+    token = enrolled.json()["node_token"]
+    heartbeat = client.post(
+        "/v1/nodes/edge-1/heartbeat",
+        json={"available_cpu_millicores": 7000, "available_memory_mb": 12000},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert heartbeat.status_code == 200
     job = {
         "workload_id": "job-1",
         "required_capabilities": ["gpu"],
