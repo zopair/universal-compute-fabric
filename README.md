@@ -12,6 +12,7 @@ Hybrid edge–cloud workload orchestration for heterogeneous devices.
 
 ## Layout
 - `services/control-plane`: FastAPI control plane, SQLAlchemy persistence, leases and placement.
+- `services/worker-agent`: lightweight Linux host telemetry and heartbeat client.
 - `services/control-plane/migrations`: Alembic schema migrations.
 - `docs/`: architecture, API, roadmap, ADRs and technology assessment.
 - `deploy/`: Docker development lab with PostgreSQL.
@@ -37,7 +38,7 @@ pytest -q
 ruff check services tests
 ```
 
-Administrative endpoints use `X-UCF-Admin-Key`. First node enrollment returns a one-time node bearer token; store it securely. Workers renew their lease through `POST /v1/nodes/{node_id}/heartbeat`. Scheduling excludes expired leases.
+Administrative endpoints use `X-UCF-Admin-Key`. First node enrollment returns a one-time node bearer token; store it securely. Workers renew their lease through `POST /v1/nodes/{node_id}/heartbeat`. Scheduling excludes expired leases. See [Linux worker agent](services/worker-agent/README.md) for host enrollment and telemetry.
 
 See [architecture](docs/ARCHITECTURE.md), [API](docs/API.md), [roadmap](docs/ROADMAP.md), [open-source technology assessment](docs/OPEN_SOURCE_ASSESSMENT.md), [contributing](CONTRIBUTING.md).
 
