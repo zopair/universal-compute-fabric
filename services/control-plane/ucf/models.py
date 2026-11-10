@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class Tier(StrEnum):
@@ -63,6 +63,14 @@ class TaskCreateRequest(BaseModel):
     image: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._/:@-]{1,254}@sha256:[a-f0-9]{64}$")
     command: list[str] = Field(min_length=1, max_length=64)
     timeout_seconds: int = Field(default=30, ge=1, le=300)
+
+    @model_validator(mode="after")
+    def validate_runtime_limits(self):
+        if self.workload.cpu_millicores < 100 or self.workload.memory_mb < 64:
+            raise ValueError("Docker tasks require at least 100 millicores and 64 MB memory")
+        if self.workload.gpu_units:
+            raise ValueError("GPU tasks are not supported by the initial CPU-only executor")
+        return self
 
     @field_validator("command")
     @classmethod
