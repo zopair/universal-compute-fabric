@@ -27,7 +27,7 @@ Nodes whose lease expires are marked stale and excluded from scheduling. Expiry 
 
 ## Credential rotation
 
-`POST /v1/nodes/{node_id}/rotate-token` requires the admin key and immediately invalidates the previous node token. The new token is returned once; securely deliver it to the worker before rotation or expect that worker to remain offline until reconfigured.
+`POST /v1/nodes/{node_id}/rotate-token` requires the admin key and immediately invalidates the previous node token. The new token is returned once; the node becomes pending and is removed from scheduling until the worker heartbeats with the new token. Securely deliver the new token to the worker before rotation or expect it to remain offline.
 
 ## Scheduling
 
