@@ -24,6 +24,7 @@ from ucf.repository import (
     list_node_status,
     node_to_model,
     refresh_heartbeat,
+    rotate_node_token,
     utcnow,
 )
 from ucf.scheduler import schedule
@@ -94,6 +95,14 @@ def heartbeat(
         lease_expires_at=expires,
         lease_seconds=settings.node_lease_seconds,
     )
+
+
+@app.post("/v1/nodes/{node_id}/rotate-token", dependencies=[Depends(require_admin)])
+def rotate_token(node_id: str, db: Session = Depends(get_db)) -> dict[str, str]:
+    token = rotate_node_token(db, node_id)
+    if token is None:
+        raise HTTPException(status_code=404, detail="Node not found")
+    return {"node_id": node_id, "node_token": token}
 
 
 @app.delete("/v1/nodes/{node_id}", dependencies=[Depends(require_admin)])
