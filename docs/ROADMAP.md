@@ -9,11 +9,16 @@
 - [ ] Verify GitHub Actions run
 
 ## M1 — Reliable control plane
-- [ ] Follow the open-source adoption plan in [OPEN_SOURCE_ASSESSMENT.md](OPEN_SOURCE_ASSESSMENT.md)
-- [ ] PostgreSQL persistence and migrations
-- [ ] Heartbeats, leases and stale-node eviction
-- [ ] OIDC, RBAC, tenant quotas and audit
-- [ ] OpenTelemetry metrics, traces and logs
+- [x] Open-source adoption plan and component selection
+- [x] PostgreSQL persistence and Alembic migration
+- [x] Per-node credentials and administrative API key
+- [x] Heartbeats, leases and stale-node exclusion
+- [x] Basic audit events
+- [x] OpenTelemetry tracing integration
+- [ ] OIDC, RBAC and tenant quotas
+- [ ] Metrics/log export dashboard and alerting
+- [ ] Credential rotation and revocation API
+- [ ] Dedicated lease reaper and load testing
 
 ## M2 — Execution adapters
 - [ ] Container executor (containerd/Kubernetes)
@@ -23,6 +28,7 @@
 - [ ] Idempotent lifecycle, cancellation and retries
 
 ## M3 — Device clients and sessions
+- [ ] Linux worker agent and enrollment bootstrap
 - [ ] Android agent POC
 - [ ] Browser client for interactive workloads
 - [ ] Device capability and power telemetry
