@@ -1,6 +1,6 @@
 # UCF Linux Worker Agent
 
-This minimal agent reports host CPU and RAM capacity to the UCF control plane and renews the node lease. It does **not** execute user workloads, inspect user files, or collect process-level data.
+This minimal agent reports currently available CPU and RAM (not total host capacity) to the UCF control plane and renews the node lease. It does **not** execute user workloads, inspect user files, or collect process-level data.
 
 ## 1. Enroll the host
 
@@ -39,6 +39,6 @@ ucf-worker
 
 For local development only, `http://127.0.0.1:8000` is allowed. Remote control-plane URLs must use HTTPS. The default heartbeat interval is 15 seconds; the control-plane default lease is 45 seconds.
 
-Optional settings: `UCF_HEARTBEAT_INTERVAL_SECONDS` (5–300), `UCF_GPU_UNITS` (manually declared GPU units), and `UCF_LOG_LEVEL`.
+Optional settings: `UCF_HEARTBEAT_INTERVAL_SECONDS` (5–300), `UCF_GPU_UNITS` (manually declared total GPU units; omitted by default so the agent never overwrites GPU inventory), and `UCF_LOG_LEVEL`. CPU availability is estimated from sampled system utilization; available RAM comes from the OS memory report. These are short-lived estimates, not reservations or guaranteed capacity.
 
 The administrator must set realistic region, trust, latency and cost metadata at enrollment. This agent reports CPU/RAM capacity only; it does not benchmark workload latency or automatically discover GPU hardware.
