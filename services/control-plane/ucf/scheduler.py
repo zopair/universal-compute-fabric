@@ -41,7 +41,11 @@ def schedule(job: WorkloadRequest, nodes: list[ComputeNode]) -> PlacementDecisio
         if _eligibility_reasons(node, job):
             continue
         latency_score = max(0.0, 1.0 - node.estimated_latency_ms / job.max_latency_ms)
-        cost_ceiling = job.max_cost_per_minute or max(node.estimated_cost_per_minute, 1.0)
+        cost_ceiling = (
+            job.max_cost_per_minute
+            if job.max_cost_per_minute is not None
+            else max(node.estimated_cost_per_minute, 1.0)
+        )
         cost_score = max(0.0, 1.0 - node.estimated_cost_per_minute / max(cost_ceiling, 0.000001))
         tier_score = 1.0 if job.preferred_tier == node.tier else 0.0
         score = round(0.55 * latency_score + 0.30 * cost_score + 0.15 * tier_score, 6)
