@@ -27,7 +27,7 @@ class NodeRecord(Base):
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="stale", index=True)
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
-    credential_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    credential_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
