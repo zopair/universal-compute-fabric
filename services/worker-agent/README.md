@@ -1,6 +1,6 @@
 # UCF Linux Worker Agent
 
-This minimal agent reports currently available CPU and RAM (not total host capacity) to the UCF control plane and renews the node lease. It does **not** execute user workloads, inspect user files, or collect process-level data.
+By default, this minimal agent reports currently available CPU and RAM (not total host capacity) to the UCF control plane and renews the node lease. Workload execution is a separate M2 opt-in feature; the agent does not inspect user files or collect process-level data.
 
 ## 1. Enroll the host
 
