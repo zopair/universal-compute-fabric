@@ -6,11 +6,8 @@
 - [x] Deterministic placement engine
 - [x] HTTP API and tests
 - [x] Docker lab and CI workflow
-- [ ] Verify GitHub Actions run
 
 ## M1 — Reliable control plane
-- [x] Open-source adoption plan and component selection
-- [x] Staged security approach documented for the experimental POC (`docs/SECURITY_STAGES.md`)
 - [x] PostgreSQL persistence and Alembic migration
 - [x] Per-node credentials and administrative API key
 - [x] Heartbeats, leases and stale-node exclusion
@@ -20,17 +17,29 @@
 - [x] OpenTelemetry tracing integration
 - [x] Linux host telemetry/heartbeat agent (no workload execution)
 - [x] Admin-controlled node credential rotation and reactivation gate
+- [x] Staged security approach documented for the experimental POC
 - [ ] OIDC, RBAC and tenant quotas
 - [ ] Metrics/log export dashboard and alerting
 - [ ] Dedicated lease reaper and load testing
 - [ ] Dependency lockfile, SBOM and vulnerability scanning
 
 ## M2 — Execution adapters
-- [ ] Container executor (containerd/Kubernetes)
+- [x] Task API and persisted task lifecycle (pending/running/succeeded/failed)
+- [x] Node-scoped worker claim and completion contracts
+- [x] Database-backed CPU/RAM/GPU reservations with row-level node locking
+- [x] Release reservations on terminal task completion
+- [x] Require digest-pinned OCI image references in task submissions
+- [x] Worker-side Docker executor with network disabled and resource limits
+- [x] Worker polling, execution and result reporting loop
+- [x] Requeue expired worker claims while retaining their reservation
+- [x] Fence stale/expired task attempts with one-time claim tokens
+- [x] Verify PostgreSQL row-lock reservations with concurrent submissions
+- [x] Run a digest-pinned Docker executor smoke test in CI
+- [ ] Test worker crash recovery, daemon failure and hostile multi-tenant isolation
 - [ ] Firecracker/KVM microVM executor
 - [ ] Wasmtime executor for portable modules
 - [ ] Signed workload manifests and policy
-- [ ] Atomic resource reservations, idempotent lifecycle, cancellation and retries
+- [ ] Idempotent lifecycle, cancellation and retries
 
 ## M3 — Device clients and sessions
 - [ ] Android agent POC

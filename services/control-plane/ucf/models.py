@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class Tier(StrEnum):
@@ -55,6 +55,62 @@ class PlacementDecision(BaseModel):
     selected_node: ComputeNode | None = None
     candidates: list[CandidateScore] = Field(default_factory=list)
     explanation: str
+
+
+class TaskCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    workload: WorkloadRequest
+    image: str = Field(max_length=320, pattern=r"^[A-Za-z0-9][A-Za-z0-9._/:@-]{1,254}@sha256:[a-f0-9]{64}$")
+    command: list[str] = Field(min_length=1, max_length=64)
+    timeout_seconds: int = Field(default=30, ge=1, le=300)
+
+    @model_validator(mode="after")
+    def validate_runtime_limits(self):
+        if self.workload.cpu_millicores < 100 or self.workload.memory_mb < 64:
+            raise ValueError("Docker tasks require at least 100 millicores and 64 MB memory")
+        if self.workload.gpu_units:
+            raise ValueError("GPU tasks are not supported by the initial CPU-only executor")
+        return self
+
+    @field_validator("command")
+    @classmethod
+    def validate_command(cls, value: list[str]) -> list[str]:
+        if any(not item or "\x00" in item or len(item) > 4096 for item in value):
+            raise ValueError("Command arguments must be non-empty and at most 4096 characters")
+        if sum(len(item) for item in value) > 16384:
+            raise ValueError("Command payload is too large")
+        return value
+
+
+class TaskResponse(BaseModel):
+    task_id: str
+    status: str
+    assigned_node_id: str
+    image: str
+    command: list[str]
+    timeout_seconds: int
+    cpu_millicores: int
+    memory_mb: int
+    gpu_units: int
+    created_at: datetime
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    exit_code: int | None = None
+    result: str | None = None
+    error: str | None = None
+
+
+class TaskClaimResponse(BaseModel):
+    task: TaskResponse | None
+    claim_token: str | None = None
+
+
+class TaskCompletionRequest(BaseModel):
+    claim_token: str = Field(min_length=32, max_length=128)
+    status: str = Field(pattern=r"^(succeeded|failed)$")
+    exit_code: int = Field(ge=0, le=255)
+    result: str | None = Field(default=None, max_length=65536)
+    error: str | None = Field(default=None, max_length=8192)
 
 
 class NodeEnrollmentResponse(BaseModel):

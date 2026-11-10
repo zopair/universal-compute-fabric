@@ -12,9 +12,14 @@ UCF is a control plane for selecting where explicit workloads run across device,
 6. Resource fabric: CPU, GPU, NPU, memory, storage and network inventory.
 7. Infrastructure: edge sites, private clusters and cloud regions.
 
-## Resource inventory and placement
-The persistent registry stores total node capacity separately from live available CPU and RAM. Enrollment creates a pending node; only its first authenticated heartbeat activates it. Worker heartbeats refresh availability snapshots; stale leases are excluded. These values are estimates, not reservations. Before concurrent workload execution is enabled, the executor must add atomic resource reservations and release/reconciliation on completion or failure.
+## Resource inventory, reservations and placement
+The persistent registry stores total node capacity separately from live available CPU and RAM. Enrollment creates a pending node; only its first authenticated heartbeat activates it. Worker heartbeats refresh availability snapshots; stale leases are excluded. These values are estimates, not reservations.
 
+M2 adds database-backed reservations for CPU, memory and GPU. A reservation is created in the same transaction as a queued task after locking the selected node row. Active reservations are subtracted from the node's latest reported availability before future placement decisions. PostgreSQL row-level locking prevents concurrent requests from independently reserving the same observed capacity. A dedicated PostgreSQL integration test races two submissions against one node and verifies that only one reservation succeeds. SQLite is used for fast unit tests and does not provide equivalent row-lock concurrency semantics.
+
+A task is assigned to one node and moves through pending, running, succeeded or failed. Claiming generates a fresh opaque fencing token; only its SHA-256 hash is persisted. Completion requires both the assigned node's bearer credential and the current claim token, compared in constant time. Expired claims clear the old token and are requeued to the same assigned node while retaining their reservation. A late completion from an earlier attempt is rejected. The Linux worker optionally polls, executes and reports tasks when explicitly enabled.
+
+## Workload placement
 A workload declares required capabilities, CPU/memory/GPU, latency budget, locality, trust, energy/cost preference, runtime constraints and fallback behavior. The scheduler filters ineligible nodes before scoring candidates. Hard constraints are never traded for a better score. The initial score is a transparent heuristic, not ML.
 
 ## Execution tiers
@@ -26,7 +31,7 @@ A workload declares required capabilities, CPU/memory/GPU, latency budget, local
 Control plane: HTTPS/gRPC for identity, inventory, scheduling and lifecycle. Data plane: workload-specific transport; WebRTC may suit interactive audio/video, while QUIC may suit multiplexed streams. Benchmark before selecting.
 
 ## Isolation
-Containers for compatible workloads; microVMs (Firecracker/KVM) for stronger isolation; WebAssembly for portable constrained modules. The current scheduler does not launch workloads.
+The M2 task contract requires OCI image references pinned to SHA-256 digests and passes commands as argument arrays, not shell strings. The optional Linux worker executor uses Docker with network disabled, read-only root filesystem, dropped capabilities, non-root identity, CPU/memory/PID limits, bounded time/output, no host mounts, and an exact digest allowlist. Execution is disabled by default. CI builds and runs a minimal digest-pinned image through a local registry to verify the Docker adapter's real execution path. This smoke test does not establish crash recovery or hostile multi-tenant isolation. Containers are a POC isolation boundary, not a substitute for microVMs against hostile multi-tenant workloads.
 
 ## Session continuity
 Persist application state explicitly and rehydrate it on compatible targets. Handoff is not arbitrary process migration between unlike operating systems.

@@ -5,12 +5,16 @@ import logging
 import os
 import re
 import signal
+import shutil
+import subprocess
 import threading
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 import psutil
+
+from ucf_worker.executor import DockerExecutor
 
 LOG = logging.getLogger("ucf-worker")
 
@@ -44,26 +48,58 @@ def collect_resources(gpu_units: int | None = None) -> dict[str, object]:
     return resources
 
 
-def send_heartbeat(endpoint: str, node_id: str, token: str, payload: dict[str, object], timeout: int = 10) -> None:
-    url = f"{endpoint}/v1/nodes/{node_id}/heartbeat"
+def post_json(endpoint: str, path: str, token: str, payload: dict[str, object] | None = None,
+              timeout: int = 10) -> dict[str, object]:
     request = Request(
-        url,
-        data=json.dumps(payload).encode("utf-8"),
+        f"{endpoint}{path}",
+        data=json.dumps(payload or {}).encode("utf-8"),
         headers={
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
-            "User-Agent": "ucf-worker-agent/0.1",
+            "User-Agent": "ucf-worker-agent/0.2",
         },
         method="POST",
     )
+
     class RejectRedirects(HTTPRedirectHandler):
         def redirect_request(self, req, fp, code, msg, headers, new_url):
             return None
 
-    opener = build_opener(RejectRedirects)
-    with opener.open(request, timeout=timeout) as response:
+    with build_opener(RejectRedirects).open(request, timeout=timeout) as response:
         if response.status != 200:
-            raise RuntimeError(f"Heartbeat returned HTTP {response.status}")
+            raise RuntimeError(f"Control-plane request returned HTTP {response.status}")
+        data = json.loads(response.read().decode("utf-8"))
+        if not isinstance(data, dict):
+            raise TypeError("Control-plane response must be a JSON object")
+        return data
+
+
+def send_heartbeat(endpoint: str, node_id: str, token: str, payload: dict[str, object],
+                   timeout: int = 10) -> None:
+    post_json(endpoint, f"/v1/nodes/{node_id}/heartbeat", token, payload, timeout)
+
+
+def execute_one_task(endpoint: str, token: str, executor: DockerExecutor) -> bool:
+    response = post_json(endpoint, "/v1/worker/tasks/claim", token)
+    task = response.get("task")
+    if task is None:
+        return False
+    if not isinstance(task, dict) or not isinstance(task.get("task_id"), str):
+        raise TypeError("Control plane returned an invalid task claim")
+    claim_token = response.get("claim_token")
+    if not isinstance(claim_token, str) or len(claim_token) < 32:
+        raise TypeError("Control plane returned an invalid task claim token")
+    result = executor.execute(task)
+    completion = {
+        "claim_token": claim_token,
+        "status": result.status,
+        "exit_code": result.exit_code,
+        "result": result.stdout,
+        "error": (result.error or result.stderr or None)[:8192] if (result.error or result.stderr) else None,
+    }
+    post_json(endpoint, f"/v1/worker/tasks/{task['task_id']}/complete", token, completion)
+    LOG.info("Task %s finished with status %s", task["task_id"], result.status)
+    return True
 
 
 def run() -> None:
@@ -80,6 +116,22 @@ def run() -> None:
     if gpu_units is not None and gpu_units < 0:
         raise ValueError("UCF_GPU_UNITS cannot be negative")
 
+    executor = None
+    if os.getenv("UCF_EXECUTION_ENABLED", "false").lower() == "true":
+        allowed_images = {
+            item.strip() for item in os.getenv("UCF_ALLOWED_IMAGE_DIGESTS", "").split(",")
+            if item.strip()
+        }
+        executor = DockerExecutor(allowed_images)
+        if shutil.which("docker") is None:
+            raise ValueError("Docker CLI is required when UCF_EXECUTION_ENABLED=true")
+        probe = subprocess.run(
+            ["docker", "info"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            timeout=10, check=False,
+        )
+        if probe.returncode != 0:
+            raise ValueError("Docker daemon is not available to the worker agent")
+
     stop = threading.Event()
 
     def shutdown(signum, _frame):
@@ -94,9 +146,11 @@ def run() -> None:
         try:
             send_heartbeat(endpoint, node_id, token, collect_resources(gpu_units))
             LOG.info("Heartbeat accepted for node %s", node_id)
+            if executor is not None:
+                execute_one_task(endpoint, token, executor)
             backoff = 2
             stop.wait(interval)
-        except (HTTPError, URLError, TimeoutError, OSError, RuntimeError) as exc:
+        except (HTTPError, URLError, TimeoutError, OSError, RuntimeError, subprocess.SubprocessError) as exc:
             LOG.warning("Heartbeat failed (%s); retrying in %s seconds", type(exc).__name__, backoff)
             stop.wait(backoff)
             backoff = min(backoff * 2, interval)

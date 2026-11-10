@@ -2,7 +2,7 @@
 
 Hybrid edge–cloud workload orchestration for heterogeneous devices.
 
-> Status: M1 control-plane implementation. UCF proposes placement for explicit workloads; it is not a universal remote CPU, transparent WAN RAM, or a mechanism for running every mobile app remotely. Workload execution is not enabled yet.
+> Status: M2 experimental execution foundation. UCF schedules explicit workloads across registered nodes; it is not a universal remote CPU, transparent WAN RAM, or a mechanism for running every mobile app remotely. Linux Docker execution is opt-in, CPU-only, and limited to pre-approved digest-pinned images.
 
 ## Principles
 - Keep interaction loops, safety-critical control, sensors, security boundaries and offline fallback local.
@@ -12,11 +12,11 @@ Hybrid edge–cloud workload orchestration for heterogeneous devices.
 
 ## Layout
 - `services/control-plane`: FastAPI control plane, SQLAlchemy persistence, leases and placement.
-- `services/worker-agent`: lightweight Linux host telemetry and heartbeat client.
+- `services/worker-agent`: Linux telemetry/heartbeat client with optional, allowlisted Docker task execution (disabled by default).
 - `services/control-plane/migrations`: Alembic schema migrations.
 - `docs/`: architecture, API, roadmap, ADRs and technology assessment.
 - `deploy/`: Docker development lab with PostgreSQL.
-- `tests/`: scheduler and API tests.
+- `tests/`: scheduler, API, PostgreSQL concurrency and Docker runtime integration tests.
 - `.github/workflows/`: CI.
 
 ## Run the development lab
@@ -38,11 +38,11 @@ pytest -q
 ruff check services tests
 ```
 
-Administrative endpoints use `X-UCF-Admin-Key`. First node enrollment returns a one-time node bearer token; store it securely. Workers renew their lease through `POST /v1/nodes/{node_id}/heartbeat`. Scheduling excludes expired leases. See [Linux worker agent](services/worker-agent/README.md) for host enrollment and telemetry.
+Administrative endpoints use `X-UCF-Admin-Key`. First node enrollment returns a one-time node bearer token; store it securely. Workers renew their lease through `POST /v1/nodes/{node_id}/heartbeat`. Scheduling excludes expired leases. `POST /v1/tasks` creates a persisted task and reserves node capacity; authenticated workers claim and complete tasks through the worker API. The optional Docker executor requires `UCF_EXECUTION_ENABLED=true` plus an exact `UCF_ALLOWED_IMAGE_DIGESTS` allowlist and locally preloaded images. See [Linux worker agent](services/worker-agent/README.md) for configuration.
 
 See [architecture](docs/ARCHITECTURE.md), [API](docs/API.md), [roadmap](docs/ROADMAP.md), [open-source technology assessment](docs/OPEN_SOURCE_ASSESSMENT.md), [contributing](CONTRIBUTING.md).
 
 ## Security status
-M1 includes persistent inventory, a single admin secret, per-node bearer credentials, lease expiry and audit events. It does **not** yet include OIDC/RBAC, tenant isolation, device attestation, mTLS, rate limiting, admin-key rotation automation, workload execution isolation, or a production threat-model review. Do not expose the development lab directly to the public internet or submit sensitive workloads.
+The POC includes persistent inventory, a single admin secret, per-node bearer credentials, lease expiry, audit events, task reservations and an optional constrained Docker executor. Execution is disabled by default. The Docker daemon is privileged and the container profile is not a hardened multi-tenant boundary. OIDC/RBAC, tenant isolation, device attestation, mTLS, rate limiting, signed workloads, Firecracker isolation, production threat modeling and recovery remain incomplete. Do not expose the development lab directly to the public internet or submit sensitive workloads.
 
 Apache-2.0. See [LICENSE](LICENSE).

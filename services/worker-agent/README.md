@@ -1,6 +1,6 @@
 # UCF Linux Worker Agent
 
-This minimal agent reports currently available CPU and RAM (not total host capacity) to the UCF control plane and renews the node lease. It does **not** execute user workloads, inspect user files, or collect process-level data.
+By default, this minimal agent reports currently available CPU and RAM (not total host capacity) to the UCF control plane and renews the node lease. Workload execution is a separate M2 opt-in feature; the agent does not inspect user files or collect process-level data.
 
 ## 1. Enroll the host
 
@@ -42,3 +42,17 @@ For local development only, `http://127.0.0.1:8000` is allowed. Remote control-p
 Optional settings: `UCF_HEARTBEAT_INTERVAL_SECONDS` (5–300), `UCF_GPU_UNITS` (manually declared total GPU units; omitted by default so the agent never overwrites GPU inventory), and `UCF_LOG_LEVEL`. CPU availability is estimated from sampled system utilization; available RAM comes from the OS memory report. These are short-lived estimates, not reservations or guaranteed capacity.
 
 The administrator must set realistic region, trust, latency and cost metadata at enrollment. This agent reports available CPU/RAM only; it does not benchmark workload-path latency or automatically discover GPU hardware.
+
+
+## 3. Optional task execution (M2 POC)
+
+Execution is **disabled by default**. To enable the experimental Docker adapter on a dedicated Linux worker:
+
+```bash
+export UCF_EXECUTION_ENABLED=true
+export UCF_ALLOWED_IMAGE_DIGESTS="ghcr.io/your-org/approved-worker@sha256:<64-hex-digest>"
+```
+
+The exact image digest must already exist locally; the executor uses `--pull=never`. Only images listed in `UCF_ALLOWED_IMAGE_DIGESTS` can run. The initial adapter is CPU-only. Tasks requiring GPU are rejected. The agent polls for one task after each successful heartbeat and reports its bounded output and exit status.
+
+The container is launched with no network, read-only root filesystem, no Linux capabilities, no-new-privileges, a non-root UID, CPU/memory/swap/PID limits, a small temporary filesystem, no host mounts and a bounded timeout. Output retained by the agent is capped at 64 KiB per stream. Docker access is highly privileged on the host: use a dedicated test machine, do not expose the Docker socket to workloads, and do not treat this POC container profile as a hardened hostile multi-tenant boundary. Keep execution disabled on shared or production hosts until a stronger runtime and operational recovery are implemented.

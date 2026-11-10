@@ -2,9 +2,10 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "feat/**"]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -23,6 +24,15 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd "pg_isready -U ucf -d ucf"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
+        options: >-
+          --health-cmd "wget -qO- http://127.0.0.1:5000/v2/ >/dev/null || exit 1"
           --health-interval 5s
           --health-timeout 3s
           --health-retries 20
@@ -45,5 +55,33 @@ jobs:
         env:
           DATABASE_URL: postgresql+psycopg://ucf:ucf-ci-password@localhost:5432/ucf
         run: alembic upgrade head
+      - name: PostgreSQL concurrent reservation test
+        env:
+          DATABASE_URL: postgresql+psycopg://ucf:ucf-ci-password@localhost:5432/ucf
+        run: pytest -q tests/test_postgres_concurrency.py
+      - name: Build and publish local digest-pinned smoke image
+        run: |
+          curl --retry 10 --retry-connrefused --retry-delay 2 -fsS http://127.0.0.1:5000/v2/ >/dev/null
+          cat > smoke.s <<'EOF'
+          .global _start
+          .section .text
+          _start:
+            mov $60, %rax
+            xor %rdi, %rdi
+            syscall
+          EOF
+          as -o smoke.o smoke.s
+          ld -o smoke smoke.o
+          cat > Dockerfile.smoke <<'EOF'
+          FROM scratch
+          COPY smoke /smoke
+          EOF
+          docker build -f Dockerfile.smoke -t 127.0.0.1:5000/ucf-smoke:ci .
+          docker push 127.0.0.1:5000/ucf-smoke:ci
+          IMAGE_REF="$(docker image inspect --format '{{index .RepoDigests 0}}' 127.0.0.1:5000/ucf-smoke:ci)"
+          test -n "$IMAGE_REF"
+          echo "UCF_TEST_IMAGE_REF=$IMAGE_REF" >> "$GITHUB_ENV"
+      - name: Docker executor integration test
+        run: pytest -q tests/test_docker_integration.py
       - name: Test
         run: pytest -q
