@@ -86,7 +86,6 @@ def refresh_heartbeat(db: Session, record: NodeRecord, heartbeat: HeartbeatReque
     record.lease_expires_at = now + timedelta(seconds=settings.node_lease_seconds)
     record.status = "active"
     record.updated_at = now
-    add_audit(db, "node.heartbeat", record.node_id)
     db.commit()
     db.refresh(record)
     return record
@@ -148,3 +147,16 @@ def delete_node(db: Session, node_id: str) -> bool:
     db.delete(record)
     db.commit()
     return True
+
+
+
+def rotate_node_token(db: Session, node_id: str) -> str | None:
+    record = db.get(NodeRecord, node_id)
+    if record is None:
+        return None
+    token = create_node_token()
+    record.credential_hash = hash_token(token)
+    record.updated_at = utcnow()
+    add_audit(db, "node.credential_rotated", node_id)
+    db.commit()
+    return token
