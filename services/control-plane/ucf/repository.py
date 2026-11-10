@@ -163,7 +163,10 @@ def create_task_with_reservation(db: Session, payload: TaskCreateRequest, node_i
     record = db.execute(
         select(NodeRecord).where(NodeRecord.node_id == node_id).with_for_update()
     ).scalar_one_or_none()
-    if record is None or record.status != "active" or not record.lease_expires_at or record.lease_expires_at <= now:
+    lease_expires_at = record.lease_expires_at if record is not None else None
+    if lease_expires_at is not None and lease_expires_at.tzinfo is None:
+        lease_expires_at = lease_expires_at.replace(tzinfo=timezone.utc)
+    if record is None or record.status != "active" or lease_expires_at is None or lease_expires_at <= now:
         raise ValueError("Selected node is no longer active")
     effective = effective_node_model(db, record)
     available_cpu = effective.available_cpu_millicores
