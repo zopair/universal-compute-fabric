@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+import hmac
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -197,7 +198,7 @@ def create_task_with_reservation(db: Session, payload: TaskCreateRequest, node_i
     return task
 
 
-def claim_next_task(db: Session, node_id: str) -> TaskRecord | None:
+def claim_next_task(db: Session, node_id: str) -> tuple[TaskRecord | None, str | None]:
     now = utcnow()
     expired_claims = db.execute(select(TaskRecord).where(
         TaskRecord.assigned_node_id == node_id, TaskRecord.status == "running",
@@ -207,6 +208,7 @@ def claim_next_task(db: Session, node_id: str) -> TaskRecord | None:
         expired.status = "pending"
         expired.started_at = None
         expired.claim_expires_at = None
+        expired.claim_token_hash = None
         add_audit(db, "task.claim_expired", expired.task_id, f"node={node_id}")
     if expired_claims:
         db.flush()
@@ -214,17 +216,19 @@ def claim_next_task(db: Session, node_id: str) -> TaskRecord | None:
         TaskRecord.assigned_node_id == node_id, TaskRecord.status == "pending",
     ).order_by(TaskRecord.created_at, TaskRecord.task_id).with_for_update(skip_locked=True)).scalars().first()
     if task is None:
-        return None
+        return None, None
+    claim_token = create_node_token()
     task.status = "running"
     task.started_at = now
     task.claim_expires_at = now + timedelta(seconds=task.timeout_seconds + 30)
+    task.claim_token_hash = hash_token(claim_token)
     add_audit(db, "task.started", task.task_id, f"node={node_id}")
     db.commit()
     db.refresh(task)
-    return task
+    return task, claim_token
 
 
-def complete_task(db: Session, task_id: str, node_id: str, status: str,
+def complete_task(db: Session, task_id: str, node_id: str, claim_token: str, status: str,
                   exit_code: int, result: str | None, error: str | None) -> TaskRecord:
     task = db.execute(select(TaskRecord).where(
         TaskRecord.task_id == task_id, TaskRecord.assigned_node_id == node_id,
@@ -233,6 +237,9 @@ def complete_task(db: Session, task_id: str, node_id: str, status: str,
         raise LookupError("Task not found for this node")
     if task.status != "running":
         raise ValueError(f"Task cannot transition from {task.status} to {status}")
+    supplied_hash = hash_token(claim_token)
+    if not task.claim_token_hash or not hmac.compare_digest(task.claim_token_hash, supplied_hash):
+        raise ValueError("Claim token is invalid or expired")
     if (status == "succeeded" and exit_code != 0) or (status == "failed" and exit_code == 0):
         raise ValueError("Task status and exit code are inconsistent")
     now = utcnow()
@@ -242,6 +249,7 @@ def complete_task(db: Session, task_id: str, node_id: str, status: str,
     task.error = error
     task.completed_at = now
     task.claim_expires_at = None
+    task.claim_token_hash = None
     reservation = db.execute(select(ResourceReservation).where(
         ResourceReservation.task_id == task_id, ResourceReservation.status == "active",
     ).with_for_update()).scalar_one_or_none()
