@@ -27,9 +27,14 @@ def validate_endpoint(endpoint: str) -> str:
 
 def collect_resources(gpu_units: int | None = None) -> dict[str, object]:
     cpu_count = psutil.cpu_count(logical=True) or 1
+    cpu_utilization = psutil.cpu_percent(interval=0.1)
+    total_cpu_millicores = cpu_count * 1000
+    available_memory_mb = psutil.virtual_memory().available // (1024 * 1024)
     resources: dict[str, object] = {
-        "cpu_millicores": cpu_count * 1000,
-        "memory_mb": max(1, psutil.virtual_memory().total // (1024 * 1024)),
+        "available_cpu_millicores": max(
+            0, int(total_cpu_millicores * (100.0 - cpu_utilization) / 100.0)
+        ),
+        "available_memory_mb": max(0, available_memory_mb),
     }
     # Preserve admin-declared capabilities unless GPU inventory is explicitly configured.
     if gpu_units is not None:
