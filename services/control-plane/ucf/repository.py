@@ -237,12 +237,19 @@ def complete_task(db: Session, task_id: str, node_id: str, claim_token: str, sta
         raise LookupError("Task not found for this node")
     if task.status != "running":
         raise ValueError(f"Task cannot transition from {task.status} to {status}")
+    now = utcnow()
+    claim_expires_at = task.claim_expires_at
+    if claim_expires_at is None:
+        raise ValueError("Task claim has expired")
+    if claim_expires_at.tzinfo is None:
+        claim_expires_at = claim_expires_at.replace(tzinfo=timezone.utc)
+    if claim_expires_at <= now:
+        raise ValueError("Task claim has expired")
     supplied_hash = hash_token(claim_token)
     if not task.claim_token_hash or not hmac.compare_digest(task.claim_token_hash, supplied_hash):
         raise ValueError("Claim token is invalid or expired")
     if (status == "succeeded" and exit_code != 0) or (status == "failed" and exit_code == 0):
         raise ValueError("Task status and exit code are inconsistent")
-    now = utcnow()
     task.status = status
     task.exit_code = exit_code
     task.result = result
