@@ -124,6 +124,8 @@ def read_task(task_id: str, db: Session = Depends(get_db)):
 
 @app.post("/v1/worker/tasks/claim", response_model=TaskClaimResponse)
 def worker_claim(record=Depends(require_node), db: Session = Depends(get_db)):
+    if record.status != "active" or not record.lease_expires_at or record.lease_expires_at <= utcnow():
+        raise HTTPException(status_code=409, detail="Node lease is not active")
     task = claim_next_task(db, record.node_id)
     return TaskClaimResponse(task=task_to_model(task) if task else None)
 
