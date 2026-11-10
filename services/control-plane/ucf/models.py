@@ -89,6 +89,9 @@ class TaskResponse(BaseModel):
     image: str
     command: list[str]
     timeout_seconds: int
+    cpu_millicores: int
+    memory_mb: int
+    gpu_units: int
     created_at: datetime
     started_at: datetime | None = None
     completed_at: datetime | None = None
