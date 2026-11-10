@@ -1,38 +1,31 @@
-# UCF API
+# API
 
-Base URL: `http://localhost:8000`
+All administrative endpoints use `X-UCF-Admin-Key`. Worker endpoints use the node-scoped bearer token issued at enrollment.
 
 ## Health
+- `GET /health`
+- `GET /ready`
 
-- `GET /health`: process liveness.
-- `GET /ready`: database readiness.
+## Nodes
+- `PUT /v1/nodes/{node_id}` — enroll or update node inventory
+- `GET /v1/nodes` — list active nodes; `include_stale=true` includes stale/pending nodes
+- `DELETE /v1/nodes/{node_id}`
+- `POST /v1/nodes/{node_id}/heartbeat` — node bearer token
+- `POST /v1/nodes/{node_id}/rotate-token` — admin credential rotation
 
-## Administrative authentication
+## Placement
+- `POST /v1/schedule` — returns a placement proposal only; it does not enqueue or execute work
 
-Administrative endpoints accept `X-UCF-Admin-Key`. Configure `UCF_ADMIN_API_KEY` before exposing the service. In production mode (`UCF_ENV=production`), missing admin credentials cause administrative requests to fail closed.
+## Task lifecycle (M2 foundation)
+- `POST /v1/tasks` — admin submits a task; the control plane selects an active node and atomically records a resource reservation. Returns HTTP 202.
+- `GET /v1/tasks/{task_id}` — admin reads task state and result.
+- `POST /v1/worker/tasks/claim` — authenticated worker claims the oldest pending task assigned to its node.
+- `POST /v1/worker/tasks/{task_id}/complete` — authenticated assigned worker reports `succeeded` or `failed`; terminal completion releases its reservation.
 
-## Node enrollment
+Task submission includes:
+- `workload`: placement requirements and requested CPU, memory and GPU.
+- `image`: OCI image reference pinned to a SHA-256 digest.
+- `command`: argument array (never a shell command string).
+- `timeout_seconds`: bounded to 1–300 seconds.
 
-`PUT /v1/nodes/{node_id}` requires the admin key and a `ComputeNode` JSON body. The first enrollment returns a one-time `node_token`. Store it securely on the worker. The database stores only its SHA-256 hash. A newly enrolled or re-enrolled node remains `pending` and is not schedulable until it sends an authenticated heartbeat. Re-enrollment does not silently rotate an existing credential.
-
-## Heartbeat and leases
-
-`POST /v1/nodes/{node_id}/heartbeat` requires `Authorization: Bearer <node_token>`. Optional resource fields refresh the live availability snapshot. `available_cpu_millicores` and `available_memory_mb` are kept separate from total `cpu_millicores` and `memory_mb`; the scheduler uses the live available values when present. A successful heartbeat renews the node lease (default 45 seconds). The Linux worker agent in `services/worker-agent` reports estimated available CPU and RAM.
-
-Nodes whose lease expires are marked stale and excluded from scheduling. Expiry is checked during inventory and scheduling requests; a dedicated background reaper can be added when worker volume requires it.
-
-## Inventory
-
-`GET /v1/nodes` lists active nodes. Administrators can request `?include_stale=true` to inspect stale records.
-
-## Credential rotation
-
-`POST /v1/nodes/{node_id}/rotate-token` requires the admin key and immediately invalidates the previous node token. The new token is returned once; the node becomes pending and is removed from scheduling until the worker heartbeats with the new token. Securely deliver the new token to the worker before rotation or expect it to remain offline.
-
-## Scheduling
-
-`POST /v1/schedule` requires the admin key. It returns a placement proposal only; it does not execute a workload.
-
-## Security boundary
-
-This milestone provides a single administrative secret and per-node bearer credentials. It is not yet multi-tenant OIDC/RBAC, device attestation, mTLS, or a production-grade secrets rotation service. Do not expose it directly to the public internet until those controls, TLS termination, rate limits, backup/restore, and threat-model review are complete.
+Reservations are subtracted from reported live capacity when subsequent placements are evaluated. PostgreSQL row-level locking serializes reservation attempts for the same node. The worker execution adapter is not yet enabled in this milestone: claim/complete endpoints define the dispatch contract, but task submission alone does not run a container. Do not treat the current API as a production execution service.
