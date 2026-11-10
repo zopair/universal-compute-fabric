@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import signal
 import threading
-import time
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
@@ -61,8 +61,8 @@ def run() -> None:
     token = os.environ["UCF_NODE_TOKEN"]
     interval = int(os.getenv("UCF_HEARTBEAT_INTERVAL_SECONDS", "15"))
     gpu_units = int(os.getenv("UCF_GPU_UNITS", "0"))
-    if not node_id or len(node_id) > 128:
-        raise ValueError("UCF_NODE_ID must contain 1 to 128 characters")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}", node_id):
+        raise ValueError("UCF_NODE_ID contains unsupported characters or has an invalid length")
     if interval < 5 or interval > 300:
         raise ValueError("UCF_HEARTBEAT_INTERVAL_SECONDS must be between 5 and 300")
     if gpu_units < 0:
