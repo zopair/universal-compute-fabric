@@ -20,6 +20,8 @@ class ComputeNode(BaseModel):
     capabilities: set[str] = Field(default_factory=set)
     cpu_millicores: int = Field(gt=0)
     memory_mb: int = Field(gt=0)
+    available_cpu_millicores: int | None = Field(default=None, ge=0)
+    available_memory_mb: int | None = Field(default=None, ge=0)
     gpu_units: int = Field(default=0, ge=0)
     estimated_latency_ms: float = Field(ge=0)
     estimated_cost_per_minute: float = Field(ge=0)
@@ -64,8 +66,8 @@ class NodeEnrollmentResponse(BaseModel):
 
 class HeartbeatRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    cpu_millicores: int | None = Field(default=None, gt=0)
-    memory_mb: int | None = Field(default=None, gt=0)
+    available_cpu_millicores: int | None = Field(default=None, ge=0)
+    available_memory_mb: int | None = Field(default=None, ge=0)
     gpu_units: int | None = Field(default=None, ge=0)
     capabilities: set[str] | None = None
     estimated_latency_ms: float | None = Field(default=None, ge=0)
