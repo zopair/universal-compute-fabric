@@ -149,3 +149,21 @@ No claim of reduced total silicon or energy until repeated end-to-end measuremen
 - vLLM: https://github.com/vllm-project/vllm
 - OpenTelemetry: https://github.com/open-telemetry
 - PostgreSQL: https://github.com/postgres/postgres
+
+
+## 9. M1 implementation outcome and evidence
+
+The first practical integration set is deliberately smaller than the candidate list:
+
+- **PostgreSQL + SQLAlchemy 2 + Alembic:** selected for durable node inventory, lease timestamps, credential hashes and audit events. SQLite is retained for isolated tests and local development, not as the multi-node production datastore. SQLAlchemy's documented session-per-request/task lifecycle informs the API's scoped database dependency.
+- **OpenTelemetry Python:** FastAPI tracing instrumentation is wired into the control plane. Export is optional through an OTLP/HTTP endpoint; a collector and dashboard are not bundled, and metrics/log pipelines remain future work. The Python project's current documentation marks traces and metrics stable while logs remain in development.
+- **Linux worker agent:** a small independent Python package reports sampled available CPU and OS-reported available RAM over HTTPS, then renews a node lease. It does not execute tasks, auto-discover GPUs, estimate end-user network paths, or reserve resources.
+- **Scheduler correction:** total CPU/RAM and currently available CPU/RAM are distinct. The scheduler uses live availability when a heartbeat has supplied it, while retaining total capacity as a fallback for nodes without telemetry. These are snapshots, not reservations; concurrent execution must wait for atomic resource reservation accounting.
+
+### Explicitly deferred
+
+Dapr, Kubernetes/K3s, KEDA, gVisor, Firecracker, Wasmtime, Ray, vLLM, Monarch and Selkies are not installed in the current runtime. They remain candidate adapters or infrastructure options. The first worker agent and control plane do not yet launch workloads. Kubernetes/K3s should be introduced only when multiple execution hosts and cluster lifecycle needs justify it. Firecracker requires compatible Linux/KVM hosts; gVisor has documented syscall and device compatibility gaps, so each untrusted workload class needs a compatibility test before it can be the default sandbox.
+
+### Current completion boundary
+
+M1 now has persistent node inventory, schema migration, per-node credentials, admin-key protection, credential rotation, heartbeat/lease expiry, stale-node exclusion, audit events, basic trace instrumentation and a Linux telemetry agent. OIDC/RBAC, tenant isolation/quotas, mTLS, metrics/log dashboards, periodic lease reaping, load testing and threat-model review remain open. M2 workload execution is not implemented.
