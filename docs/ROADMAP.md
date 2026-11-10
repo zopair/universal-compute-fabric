@@ -15,9 +15,10 @@
 - [x] Heartbeats, leases and stale-node exclusion
 - [x] Basic audit events
 - [x] OpenTelemetry tracing integration
+- [x] Linux host telemetry/heartbeat agent (no workload execution)
+- [x] Admin-controlled node credential rotation
 - [ ] OIDC, RBAC and tenant quotas
 - [ ] Metrics/log export dashboard and alerting
-- [ ] Credential rotation and revocation API
 - [ ] Dedicated lease reaper and load testing
 
 ## M2 — Execution adapters
@@ -28,7 +29,6 @@
 - [ ] Idempotent lifecycle, cancellation and retries
 
 ## M3 — Device clients and sessions
-- [ ] Linux worker agent and enrollment bootstrap
 - [ ] Android agent POC
 - [ ] Browser client for interactive workloads
 - [ ] Device capability and power telemetry
