@@ -133,15 +133,18 @@ def worker_claim(record=Depends(require_node), db: Session = Depends(get_db)):
         lease_expires_at = lease_expires_at.replace(tzinfo=timezone.utc)
     if record.status != "active" or lease_expires_at is None or lease_expires_at <= utcnow():
         raise HTTPException(status_code=409, detail="Node lease is not active")
-    task = claim_next_task(db, record.node_id)
-    return TaskClaimResponse(task=task_to_model(task) if task else None)
+    task, claim_token = claim_next_task(db, record.node_id)
+    return TaskClaimResponse(
+        task=task_to_model(task) if task else None,
+        claim_token=claim_token,
+    )
 
 
 @app.post("/v1/worker/tasks/{task_id}/complete", response_model=TaskResponse)
 def worker_complete(task_id: str, payload: TaskCompletionRequest,
                     record=Depends(require_node), db: Session = Depends(get_db)):
     try:
-        task = complete_task(db, task_id, record.node_id, payload.status,
+        task = complete_task(db, task_id, record.node_id, payload.claim_token, payload.status,
                              payload.exit_code, payload.result, payload.error)
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
