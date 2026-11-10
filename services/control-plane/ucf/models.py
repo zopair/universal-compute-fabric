@@ -14,7 +14,7 @@ class Tier(StrEnum):
 
 class ComputeNode(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    node_id: str = Field(min_length=1, max_length=128)
+    node_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}")
     tier: Tier
     region: str = Field(min_length=1, max_length=64)
     capabilities: set[str] = Field(default_factory=set)
