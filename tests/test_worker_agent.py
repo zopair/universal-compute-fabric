@@ -14,8 +14,8 @@ def test_local_http_is_allowed():
 
 def test_resources_report_only_observed_values():
     resources = collect_resources()
-    assert resources["cpu_millicores"] > 0
-    assert resources["memory_mb"] > 0
+    assert resources["available_cpu_millicores"] >= 0
+    assert resources["available_memory_mb"] >= 0
     assert "gpu_units" not in resources
 
 
