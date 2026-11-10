@@ -63,7 +63,7 @@ def test_enroll_heartbeat_and_node_scoped_credential(client):
 
 
 def test_stale_node_is_not_scheduled(client):
-    headers, token = enroll_active_node(client)
+    headers, _token = enroll_active_node(client)
     db_generator = db_session()
     db = next(db_generator)
     try:
