@@ -16,7 +16,7 @@ Hybrid edge–cloud workload orchestration for heterogeneous devices.
 - `services/control-plane/migrations`: Alembic schema migrations.
 - `docs/`: architecture, API, roadmap, ADRs and technology assessment.
 - `deploy/`: Docker development lab with PostgreSQL.
-- `tests/`: scheduler and API tests.
+- `tests/`: scheduler, API, PostgreSQL concurrency and Docker runtime integration tests.
 - `.github/workflows/`: CI.
 
 ## Run the development lab
