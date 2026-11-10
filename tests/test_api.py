@@ -140,6 +140,7 @@ def test_admin_rotation_invalidates_previous_node_token(client):
     assert rotated.status_code == 200
     new_token = rotated.json()["node_token"]
     assert new_token != old_token
+    assert client.get("/v1/nodes", headers=admin).json() == []
 
     old_heartbeat = client.post(
         "/v1/nodes/edge-1/heartbeat",
@@ -148,7 +149,7 @@ def test_admin_rotation_invalidates_previous_node_token(client):
     )
     new_heartbeat = client.post(
         "/v1/nodes/edge-1/heartbeat",
-        json={},
+        json={"available_cpu_millicores": 7000, "available_memory_mb": 12000},
         headers={"Authorization": f"Bearer {new_token}"},
     )
     assert old_heartbeat.status_code == 401
