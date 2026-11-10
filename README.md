@@ -29,7 +29,7 @@ python -m pip install -e "services/control-plane[dev]"
 pytest
 ```
 
-See [architecture](docs/ARCHITECTURE.md), [API](docs/API.md), [roadmap](docs/ROADMAP.md), [contributing](CONTRIBUTING.md).
+See [architecture](docs/ARCHITECTURE.md), [API](docs/API.md), [roadmap](docs/ROADMAP.md), [open-source technology assessment](docs/OPEN_SOURCE_ASSESSMENT.md), [contributing](CONTRIBUTING.md).
 
 ## Security warning
 Development-only: no authentication, tenant isolation, persistence, durable queue or workload executor. Do not expose publicly or submit sensitive workloads.
