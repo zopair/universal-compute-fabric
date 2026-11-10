@@ -17,6 +17,8 @@ class NodeRecord(Base):
     capabilities: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     cpu_millicores: Mapped[int] = mapped_column(Integer, nullable=False)
     memory_mb: Mapped[int] = mapped_column(Integer, nullable=False)
+    available_cpu_millicores: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    available_memory_mb: Mapped[int | None] = mapped_column(Integer, nullable=True)
     gpu_units: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     estimated_latency_ms: Mapped[float] = mapped_column(Float, nullable=False)
     estimated_cost_per_minute: Mapped[float] = mapped_column(Float, nullable=False)
