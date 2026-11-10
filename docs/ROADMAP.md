@@ -29,9 +29,9 @@
 - [x] Database-backed CPU/RAM/GPU reservations with row-level node locking
 - [x] Release reservations on terminal task completion
 - [x] Require digest-pinned OCI image references in task submissions
-- [ ] Worker-side Docker executor with network disabled and resource limits
-- [ ] Worker polling, execution and result reporting loop
-- [ ] Recover expired task claims and release/requeue reservations safely
+- [x] Worker-side Docker executor with network disabled and resource limits
+- [x] Worker polling, execution and result reporting loop
+- [x] Requeue expired worker claims while retaining their reservation
 - [ ] Validate runtime isolation and failure behavior with integration tests
 - [ ] Firecracker/KVM microVM executor
 - [ ] Wasmtime executor for portable modules
