@@ -18,6 +18,8 @@ def upgrade() -> None:
         sa.Column("capabilities", sa.JSON(), nullable=False),
         sa.Column("cpu_millicores", sa.Integer(), nullable=False),
         sa.Column("memory_mb", sa.Integer(), nullable=False),
+        sa.Column("available_cpu_millicores", sa.Integer(), nullable=True),
+        sa.Column("available_memory_mb", sa.Integer(), nullable=True),
         sa.Column("gpu_units", sa.Integer(), nullable=False),
         sa.Column("estimated_latency_ms", sa.Float(), nullable=False),
         sa.Column("estimated_cost_per_minute", sa.Float(), nullable=False),
