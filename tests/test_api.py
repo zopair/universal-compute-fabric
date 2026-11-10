@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from ucf.database import get_db
-from ucf.entities import NodeRecord, ResourceReservation
+from ucf.entities import NodeRecord
 from ucf.main import app
 
 
