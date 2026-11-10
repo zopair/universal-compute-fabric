@@ -35,3 +35,8 @@ addopts = "-ra"
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+
+[tool.ruff.lint]
+# FastAPI dependency injection is idiomatic; the remaining ignored rules are
+# style-only and do not affect runtime correctness.
+ignore = ["B008", "C408", "I001", "UP017", "UP037"]
