@@ -27,6 +27,15 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 20
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
+        options: >-
+          --health-cmd "wget -qO- http://127.0.0.1:5000/v2/ >/dev/null || exit 1"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -50,5 +59,26 @@ jobs:
         env:
           DATABASE_URL: postgresql+psycopg://ucf:ucf-ci-password@localhost:5432/ucf
         run: pytest -q tests/test_postgres_concurrency.py
+      - name: Build and publish local digest-pinned smoke image
+        run: |
+          curl --retry 10 --retry-connrefused --retry-delay 2 -fsS http://127.0.0.1:5000/v2/ >/dev/null
+          cat > smoke.s <<'EOF'
+          .global _start
+          .section .text
+          _start:
+            mov $60, %rax
+            xor %rdi, %rdi
+            syscall
+          EOF
+          as -o smoke.o smoke.s
+          ld -o smoke smoke.o
+          printf 'FROM scratch\\nCOPY smoke /smoke\\n' > Dockerfile.smoke
+          docker build -f Dockerfile.smoke -t 127.0.0.1:5000/ucf-smoke:ci .
+          docker push 127.0.0.1:5000/ucf-smoke:ci
+          IMAGE_REF="$(docker image inspect --format '{{index .RepoDigests 0}}' 127.0.0.1:5000/ucf-smoke:ci)"
+          test -n "$IMAGE_REF"
+          echo "UCF_TEST_IMAGE_REF=$IMAGE_REF" >> "$GITHUB_ENV"
+      - name: Docker executor integration test
+        run: pytest -q tests/test_docker_integration.py
       - name: Test
         run: pytest -q
