@@ -9,6 +9,7 @@
 - [ ] Verify GitHub Actions run
 
 ## M1 — Reliable control plane
+- [ ] Follow the open-source adoption plan in [OPEN_SOURCE_ASSESSMENT.md](OPEN_SOURCE_ASSESSMENT.md)
 - [ ] PostgreSQL persistence and migrations
 - [ ] Heartbeats, leases and stale-node eviction
 - [ ] OIDC, RBAC, tenant quotas and audit
