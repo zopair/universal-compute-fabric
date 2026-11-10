@@ -86,8 +86,12 @@ def execute_one_task(endpoint: str, token: str, executor: DockerExecutor) -> boo
         return False
     if not isinstance(task, dict) or not isinstance(task.get("task_id"), str):
         raise TypeError("Control plane returned an invalid task claim")
+    claim_token = response.get("claim_token")
+    if not isinstance(claim_token, str) or len(claim_token) < 32:
+        raise TypeError("Control plane returned an invalid task claim token")
     result = executor.execute(task)
     completion = {
+        "claim_token": claim_token,
         "status": result.status,
         "exit_code": result.exit_code,
         "result": result.stdout,
