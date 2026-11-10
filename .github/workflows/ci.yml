@@ -23,5 +23,7 @@ jobs:
         run: python -m pip install -e "services/control-plane[dev]"
       - name: Lint
         run: ruff check services tests
+      - name: Migration smoke test
+        run: DATABASE_URL=sqlite:////tmp/ucf-ci.db alembic upgrade head
       - name: Test
         run: pytest -q
