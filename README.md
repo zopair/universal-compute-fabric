@@ -48,3 +48,9 @@ See [architecture](docs/ARCHITECTURE.md), [API](docs/API.md), [roadmap](docs/ROA
 The POC includes persistent inventory, a single admin secret, per-node bearer credentials, lease expiry, audit events, task reservations and an optional constrained Docker executor. Execution is disabled by default. The Docker daemon is privileged and the container profile is not a hardened multi-tenant boundary. OIDC/RBAC, tenant isolation, device attestation, mTLS, rate limiting, signed workloads, Firecracker isolation, production threat modeling and recovery remain incomplete. Do not expose the development lab directly to the public internet or submit sensitive workloads.
 
 Apache-2.0. See [LICENSE](LICENSE).
+
+## Enterprise Project Overview
+
+<video controls playsinline preload="metadata" width="100%"><source src="https://raw.githubusercontent.com/zopair/universal-compute-fabric/feat/enterprise-showcase-video/assets/marketing/project-overview.mp4" type="video/mp4">Your browser does not support embedded video. [Open the MP4]( https://raw.githubusercontent.com/zopair/universal-compute-fabric/feat/enterprise-showcase-video/assets/marketing/project-overview.mp4 ).</video>
+
+[Watch the English project overview](VIDEO.md) · [Open the project repository](https://github.com/zopair/universal-compute-fabric)
