@@ -1,5 +1,7 @@
 # Universal Compute Fabric (UCF)
 
+> **Preview:** [Local setup, demo scenario, acceptance checks, and known limits](PREVIEW.md).
+
 Hybrid edge–cloud workload orchestration for heterogeneous devices.
 
 > Status: M2 experimental execution foundation. UCF schedules explicit workloads across registered nodes; it is not a universal remote CPU, transparent WAN RAM, or a mechanism for running every mobile app remotely. Linux Docker execution is opt-in, CPU-only, and limited to pre-approved digest-pinned images.
