@@ -1,0 +1,36 @@
+{
+  "name": "Universal Compute Fabric",
+  "tag": "Hybrid Edge–Cloud Workload Orchestration",
+  "url": "https://github.com/zopair/universal-compute-fabric",
+  "accent": [
+    73,
+    211,
+    181
+  ],
+  "scenes": [
+    {
+      "title": "The compute fragmentation problem",
+      "narration": "Modern systems span phones, edge devices, workstations, and cloud infrastructure. Yet workloads are often scheduled without a unified view of capacity, latency, locality, trust, and cost."
+    },
+    {
+      "title": "One fabric. Explicit placement.",
+      "narration": "Universal Compute Fabric, or UCF, is an experimental control plane for coordinating workloads across registered heterogeneous nodes."
+    },
+    {
+      "title": "How UCF works",
+      "narration": "A control plane maintains node inventory, heartbeats, leases, and capacity. Its scheduler places explicit tasks on eligible nodes. Workers claim assigned tasks, execute them, and report completion through authenticated APIs."
+    },
+    {
+      "title": "Designed around real constraints",
+      "narration": "UCF keeps safety-critical control and offline fallback local. It treats network memory as remote, not as local process RAM. Optional container execution is disabled by default and restricted to pre-approved image digests."
+    },
+    {
+      "title": "Business value",
+      "narration": "The intended value is a measurable foundation for using existing compute more deliberately: improving resource visibility, testing workload placement strategies, and evaluating latency, energy, bandwidth, and cost per active user."
+    },
+    {
+      "title": "Experimental by design",
+      "narration": "UCF is an M2 experimental execution foundation, not a universal remote CPU or production multi-tenant platform. Stronger identity, tenant isolation, attestation, hardened execution, and recovery remain future work. Review the architecture and roadmap on GitHub."
+    }
+  ]
+}
